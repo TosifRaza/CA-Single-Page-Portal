@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Calendar,
   Receipt,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -129,18 +128,6 @@ export const TaxGroupMasterPage: React.FC = () => {
     }
   };
 
-  const formatDate = (d?: string) => {
-    if (!d) return '—';
-    try {
-      return new Date(d).toLocaleDateString('en-GB', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-      });
-    } catch {
-      return d;
-    }
-  };
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -163,12 +150,6 @@ export const TaxGroupMasterPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
-          <NavLink
-            to="/masters/tax"
-            className="px-3.5 py-2 rounded-xl border border-light-border dark:border-dark-border text-xs font-semibold text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-bg dark:hover:bg-dark-cardSecondary transition-colors"
-          >
-            « Back to Tax Master
-          </NavLink>
           <button
             onClick={handleOpenAddModal}
             className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all"
@@ -223,7 +204,6 @@ export const TaxGroupMasterPage: React.FC = () => {
                 <th className="py-3 px-4">Tax Group Name</th>
                 <th className="py-3 px-4">Group Code</th>
                 <th className="py-3 px-4">Linked Taxes</th>
-                <th className="py-3 px-4">Due Date</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -231,13 +211,13 @@ export const TaxGroupMasterPage: React.FC = () => {
             <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
                     Loading tax groups...
                   </td>
                 </tr>
               ) : taxGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
                     No tax groups found. Click "+ Add Tax Group" to create one.
                   </td>
                 </tr>
@@ -272,16 +252,6 @@ export const TaxGroupMasterPage: React.FC = () => {
                         </NavLink>
                       ) : (
                         <span className="text-[13px] text-light-textMuted italic">0 Taxes</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-light-textSecondary dark:text-dark-textSecondary">
-                      {g.dueDate ? (
-                        <span className="inline-flex items-center gap-1.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
-                          <Calendar className="w-3.5 h-3.5 text-brand-500" />
-                          {formatDate(g.dueDate)}
-                        </span>
-                      ) : (
-                        <span className="text-light-textMuted">—</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4">
@@ -331,7 +301,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                   {editingGroup ? 'Edit Tax Group' : 'Add New Tax Group'}
                 </h2>
                 <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-0.5">
-                  Enter statutory tax category name and statutory due date
+                  Enter statutory tax category details
                 </p>
               </div>
               <button
@@ -366,25 +336,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                 </span>
               </div>
 
-              {/* Field 2: Date Option (Due Date / Statutory Date) */}
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary flex items-center justify-between">
-                  <span>Due Date / Statutory Date *</span>
-                  <span className="text-[12px] text-light-textMuted font-normal">Select date</span>
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-semibold text-xs cursor-pointer"
-                />
-                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
-                  Statutory compliance due date for this tax group
-                </span>
-              </div>
-
-              {/* Field 3: Status */}
+              {/* Field 2: Status */}
               <div className="flex items-center gap-2 pt-1">
                 <label className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                   Status:

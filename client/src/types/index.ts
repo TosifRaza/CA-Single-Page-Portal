@@ -64,7 +64,14 @@ export interface TaxMasterItem {
   filingStatus?: string;
   acknowledgementNumber?: string;
   reconciliationRequired?: boolean;
+  reconciliationDate?: string;
   defaultReconciliationType?: string;
+  filingSchedule?: {
+    periodFrom: string;
+    periodTo: string;
+    filingDate: string;
+    extendedDate?: string;
+  }[];
   reminderSettings?: {
     enabled: boolean;
     daysBeforeDueDate: number[];

@@ -176,7 +176,7 @@ export const DashboardPage: React.FC = () => {
           </NavLink>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 pt-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 pt-3">
           <div className="p-2.5 rounded-xl bg-light-bg dark:bg-dark-bg/60 border border-light-border dark:border-dark-border">
             <span className="text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary block">
               Pending Filings
@@ -222,23 +222,6 @@ export const DashboardPage: React.FC = () => {
             </span>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-light-bg dark:bg-dark-bg/60 border border-light-border dark:border-dark-border">
-            <span className="text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary block">
-              Pending Recons
-            </span>
-            <span className="text-base font-extrabold text-status-purple">
-              {stats.taxCompliance?.pendingReconciliations ?? 0}
-            </span>
-          </div>
-
-          <div className="p-2.5 rounded-xl bg-light-bg dark:bg-dark-bg/60 border border-light-border dark:border-dark-border">
-            <span className="text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary block">
-              Recon Mismatches
-            </span>
-            <span className="text-base font-extrabold text-status-red">
-              {stats.taxCompliance?.reconciliationMismatches ?? 0}
-            </span>
-          </div>
         </div>
       </div>
 

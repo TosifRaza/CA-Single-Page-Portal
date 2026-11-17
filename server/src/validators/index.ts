@@ -84,7 +84,18 @@ export const taxMasterSchema = z.object({
   filingStatus: z.string().optional(),
   acknowledgementNumber: z.string().optional(),
   reconciliationRequired: z.boolean().optional(),
+  reconciliationDate: z.string().optional().nullable(),
   defaultReconciliationType: z.string().optional(),
+  filingSchedule: z
+    .array(
+      z.object({
+        periodFrom: z.string().min(1),
+        periodTo: z.string().min(1),
+        filingDate: z.string().min(1),
+        extendedDate: z.string().optional().nullable(),
+      })
+    )
+    .optional(),
   reminderSettings: z
     .object({
       enabled: z.boolean().default(true),

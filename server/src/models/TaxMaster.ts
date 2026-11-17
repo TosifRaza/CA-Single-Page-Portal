@@ -29,7 +29,14 @@ export interface ITaxMaster extends Document {
   filingStatus?: string;
   acknowledgementNumber?: string;
   reconciliationRequired?: boolean;
+  reconciliationDate?: Date;
   defaultReconciliationType?: string;
+  filingSchedule?: {
+    periodFrom: Date;
+    periodTo: Date;
+    filingDate: Date;
+    extendedDate?: Date;
+  }[];
   reminderSettings?: {
     enabled: boolean;
     daysBeforeDueDate: number[];
@@ -78,7 +85,16 @@ const TaxMasterSchema = new Schema<ITaxMaster>(
     filingStatus: { type: String, default: 'Active' },
     acknowledgementNumber: { type: String, trim: true },
     reconciliationRequired: { type: Boolean, default: false },
+    reconciliationDate: { type: Date },
     defaultReconciliationType: { type: String },
+    filingSchedule: [
+      {
+        periodFrom: { type: Date, required: true },
+        periodTo: { type: Date, required: true },
+        filingDate: { type: Date, required: true },
+        extendedDate: { type: Date },
+      },
+    ],
     reminderSettings: {
       enabled: { type: Boolean, default: true },
       daysBeforeDueDate: [{ type: Number }],

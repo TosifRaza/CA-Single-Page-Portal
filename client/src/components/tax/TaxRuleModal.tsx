@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   X,
-  Calendar,
+  Plus,
   AlertCircle,
   CheckCircle2,
   HelpCircle,
@@ -12,16 +12,14 @@ import {
   Bell,
   Clock,
   ShieldAlert,
-  Sparkles,
   Layers,
   FolderTree,
   Building,
-  Info,
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
-import { TaxMasterItem, ClientItem, EmployeeItem, TaxGroupItem } from '../../types';
+import { TaxMasterItem, EmployeeItem, TaxGroupItem } from '../../types';
 
 interface TaxRuleModalProps {
   isOpen: boolean;
@@ -30,6 +28,31 @@ interface TaxRuleModalProps {
   editingTax?: TaxMasterItem | null;
   defaultTaxGroup?: string;
 }
+
+interface MonthlyFilingPeriod {
+  periodFrom: string;
+  periodTo: string;
+  filingDate: string;
+  extendedDate: string;
+}
+
+const buildMonthlyFilingPeriods = (financialYear: string): MonthlyFilingPeriod[] => {
+  const startYear = Number(financialYear.match(/\d{4}/)?.[0]) || new Date().getFullYear();
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const monthIndex = (3 + index) % 12;
+    const year = startYear + (index >= 9 ? 1 : 0);
+    const month = String(monthIndex + 1).padStart(2, '0');
+    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+
+    return {
+      periodFrom: `${year}-${month}-01`,
+      periodTo: `${year}-${month}-${String(lastDay).padStart(2, '0')}`,
+      filingDate: '',
+      extendedDate: '',
+    };
+  });
+};
 
 // Domain-Specific Intelligence for CA Compliance
 const TAX_GROUP_CONFIG: Record<
@@ -252,7 +275,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   defaultTaxGroup = '',
 }) => {
   // Dropdown options
-  const [clients, setClients] = useState<ClientItem[]>([]);
   const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [financialYears, setFinancialYears] = useState<any[]>([]);
   const [availableTaxGroups, setAvailableTaxGroups] = useState<TaxGroupItem[]>([]);
@@ -261,11 +283,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   // Section A: Basic Tax Information
   const [taxGroup, setTaxGroup] = useState<string>('');
-  const [showGroupSelect, setShowGroupSelect] = useState<boolean>(false);
   const [taxName, setTaxName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [frequency, setFrequency] = useState<string>('Monthly');
   const [financialYear, setFinancialYear] = useState<string>('2026-27');
+  const [monthlyFilingPeriods, setMonthlyFilingPeriods] = useState<MonthlyFilingPeriod[]>(() =>
+    buildMonthlyFilingPeriods('2026-27').slice(0, 1)
+  );
+  const [remainingSavedMonthlyPeriods, setRemainingSavedMonthlyPeriods] = useState<MonthlyFilingPeriod[]>([]);
   const [applicableClientTypes, setApplicableClientTypes] = useState<string[]>([]);
   const [status, setStatus] = useState<string>('Active');
 
@@ -290,6 +315,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   // Section D: Reconciliation Management
   const [reconciliationRequired, setReconciliationRequired] = useState<boolean>(false);
+  const [reconciliationDate, setReconciliationDate] = useState<string>('');
   const [reconciliationType, setReconciliationType] = useState<string>(
     'GSTR-2B vs Purchase Register'
   );
@@ -335,13 +361,11 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       Promise.all([
-        api.get('/clients?limit=100'),
         api.get('/employees?limit=50'),
         api.get('/financial-years'),
         api.get('/tax-groups'),
       ])
-        .then(([cRes, eRes, fyRes, tgRes]) => {
-          if (cRes.data?.data?.clients) setClients(cRes.data.data.clients);
+        .then(([eRes, fyRes, tgRes]) => {
           if (eRes.data?.data?.employees) {
             setEmployees(eRes.data.data.employees);
             if (!assignedEmployeeId && eRes.data.data.employees.length > 0) {
@@ -365,6 +389,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   // Handle Tax Group Change - strictly dynamic from Database Tax Group configuration
   const handleTaxGroupChange = (newGroup: string) => {
     setTaxGroup(newGroup);
+    setMonthlyFilingPeriods(buildMonthlyFilingPeriods(financialYear).slice(0, 1));
+    setRemainingSavedMonthlyPeriods([]);
     setIsDirty(true);
     if (!newGroup) return;
 
@@ -426,6 +452,18 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setDescription(editingTax.description || '');
       setFrequency(editingTax.frequency || editingTax.filingFrequency || 'Monthly');
       setFinancialYear(editingTax.applicableFinancialYear || '2026-27');
+      const savedSchedule = editingTax.filingSchedule?.map((period) => ({
+        periodFrom: period.periodFrom?.slice(0, 10) || '',
+        periodTo: period.periodTo?.slice(0, 10) || '',
+        filingDate: period.filingDate?.slice(0, 10) || '',
+        extendedDate: period.extendedDate?.slice(0, 10) || '',
+      }));
+      setMonthlyFilingPeriods(
+        savedSchedule?.length
+          ? savedSchedule.slice(0, 1)
+          : buildMonthlyFilingPeriods(editingTax.applicableFinancialYear || '2026-27').slice(0, 1)
+      );
+      setRemainingSavedMonthlyPeriods(savedSchedule?.slice(1) || []);
       setStatus(editingTax.status || 'Active');
       if (editingTax.applicableClientTypes) {
         setApplicableClientTypes(editingTax.applicableClientTypes);
@@ -433,6 +471,11 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       if (editingTax.reconciliationRequired !== undefined) {
         setReconciliationRequired(editingTax.reconciliationRequired);
       }
+      setReconciliationDate(
+        editingTax.reconciliationDate
+          ? new Date(editingTax.reconciliationDate).toISOString().split('T')[0]
+          : ''
+      );
       if (editingTax.defaultReconciliationType) {
         setReconciliationType(editingTax.defaultReconciliationType);
       }
@@ -473,17 +516,17 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       }
       if (editingTax.acknowledgementNumber)
         setAcknowledgementNumber(editingTax.acknowledgementNumber);
-      setShowGroupSelect(false);
       setIsDirty(false);
     } else {
       // Clean start - no hardcoded values
       const initialGroup = defaultTaxGroup && defaultTaxGroup !== 'All' && defaultTaxGroup !== 'All Taxes' ? defaultTaxGroup : '';
       setTaxGroup(initialGroup);
-      setShowGroupSelect(false);
       setTaxName('');
       setDescription('');
       setFrequency('Monthly');
       setFinancialYear('2026-27');
+      setMonthlyFilingPeriods(buildMonthlyFilingPeriods('2026-27').slice(0, 1));
+      setRemainingSavedMonthlyPeriods([]);
       setStatus('Active');
       setApplicableClientTypes([]);
       setPeriodFrom('');
@@ -499,6 +542,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setActualSubmissionDate('');
       setAcknowledgementNumber('');
       setReconciliationRequired(false);
+      setReconciliationDate('');
       setReconciliationType('');
       setAmountAsPerBooks(0);
       setAmountAsPerStatement(0);
@@ -556,12 +600,29 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       return;
     }
 
-    if (new Date(periodFrom) > new Date(periodTo)) {
+    if (frequency === 'Monthly') {
+      const invalidPeriod = monthlyFilingPeriods.some(
+        (period) =>
+          !period.periodFrom ||
+          !period.periodTo ||
+          !period.filingDate ||
+          new Date(period.periodFrom) > new Date(period.periodTo) ||
+          (period.extendedDate && new Date(period.extendedDate) < new Date(period.filingDate))
+      );
+      if (invalidPeriod) {
+        toast.error('Check each monthly period, filing date, and any extended date.');
+        return;
+      }
+    } else if (periodFrom && periodTo && new Date(periodFrom) > new Date(periodTo)) {
       toast.error('From Date cannot be later than To Date.');
       return;
     }
 
-    if (hasExtension && (!extendedDueDate || !extensionReason || extensionReason.trim().length < 3)) {
+    if (
+      frequency !== 'Monthly' &&
+      hasExtension &&
+      (!extendedDueDate || !extensionReason || extensionReason.trim().length < 3)
+    ) {
       toast.error('Please enter the extended date and a valid extension reason.');
       return;
     }
@@ -570,6 +631,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setSubmitting(true);
 
       // 1. Save or Update Reusable Tax Master Rule
+      const isMonthly = frequency === 'Monthly';
+      const completeMonthlySchedule = [
+        ...monthlyFilingPeriods,
+        ...remainingSavedMonthlyPeriods,
+      ];
+      const firstMonthlyPeriod = completeMonthlySchedule[0];
+      const lastMonthlyPeriod = completeMonthlySchedule[completeMonthlySchedule.length - 1];
       const taxRulePayload = {
         taxGroup,
         taxName,
@@ -577,21 +645,38 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         description: description || undefined,
         frequency,
         filingFrequency: frequency,
-        dueDateRule: originalDueDate ? `Due on ${originalDueDate}` : 'Statutory Due Date',
+        dueDateRule: isMonthly
+          ? 'Monthly Filing Schedule'
+          : originalDueDate
+          ? `Due on ${originalDueDate}`
+          : 'Statutory Due Date',
         applicableFinancialYear: financialYear,
         applicableClientTypes,
-        periodFrom: periodFrom || undefined,
-        periodTo: periodTo || undefined,
-        filingPeriod: filingPeriod || undefined,
-        originalDueDate: originalDueDate || undefined,
-        extendedDueDate: hasExtension && extendedDueDate ? extendedDueDate : null,
-        effectiveDueDate: effectiveDueDate || undefined,
+        periodFrom: isMonthly ? firstMonthlyPeriod?.periodFrom : periodFrom || undefined,
+        periodTo: isMonthly ? lastMonthlyPeriod?.periodTo : periodTo || undefined,
+        filingPeriod: isMonthly ? 'Monthly Schedule' : filingPeriod || undefined,
+        originalDueDate: isMonthly ? firstMonthlyPeriod?.filingDate : originalDueDate || undefined,
+        extendedDueDate: isMonthly
+          ? firstMonthlyPeriod?.extendedDate || null
+          : hasExtension && extendedDueDate
+          ? extendedDueDate
+          : null,
+        effectiveDueDate: isMonthly
+          ? firstMonthlyPeriod?.extendedDate || firstMonthlyPeriod?.filingDate || undefined
+          : effectiveDueDate || undefined,
+        filingSchedule: isMonthly
+          ? completeMonthlySchedule.map((period) => ({
+              ...period,
+              extendedDate: period.extendedDate || undefined,
+            }))
+          : undefined,
         actualSubmissionDate: selectedClientId ? actualSubmissionDate || null : null,
         submissionDate: selectedClientId ? actualSubmissionDate || null : null,
         submissionMethod: selectedClientId ? submissionMethod : undefined,
         filingStatus: selectedClientId ? filingStatus : 'Pending',
         acknowledgementNumber: selectedClientId ? acknowledgementNumber || undefined : undefined,
         reconciliationRequired,
+        reconciliationDate: reconciliationDate || null,
         defaultReconciliationType: reconciliationRequired ? reconciliationType : undefined,
         priority,
         status,
@@ -639,6 +724,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
           assignedEmployeeId: assignedEmployeeId || undefined,
           reconciliationRequired,
           reconciliationType: reconciliationRequired ? reconciliationType : undefined,
+          reconciliationStartDate: reconciliationDate || null,
           reconciliationStatus: reconciliationRequired ? reconciliationStatus : 'Not Required',
           amountAsPerBooks: Number(amountAsPerBooks) || 0,
           amountAsPerStatement: Number(amountAsPerStatement) || 0,
@@ -667,8 +753,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl max-w-[750px] w-full flex flex-col max-h-[92vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Sticky Header */}
         <div className="sticky top-0 bg-white dark:bg-dark-card px-6 py-4 border-b border-light-border dark:border-dark-border flex items-center justify-between z-10">
           <div>
@@ -703,51 +789,32 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   Section A: Basic Tax Information
                 </h3>
               </div>
-              {taxGroup && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[13px] text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/40 px-2.5 py-0.5 rounded-md border border-brand-200 dark:border-brand-800">
-                    Tax Group: {taxGroup}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setShowGroupSelect((prev) => !prev)}
-                    className="text-[13px] text-brand-600 dark:text-brand-400 hover:underline font-semibold"
-                  >
-                    {showGroupSelect ? 'Cancel' : 'Change'}
-                  </button>
-                </div>
-              )}
             </div>
 
-            {/* Tax Group Selector - ONLY shown when no group selected, or if user explicitly clicked 'Change' */}
-            {(!taxGroup || showGroupSelect) && (
-              <div className="bg-light-bg/40 dark:bg-dark-cardSecondary/40 p-3.5 rounded-xl border border-light-border dark:border-dark-border">
-                <label className="block text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5 flex items-center gap-1.5">
-                  <FolderTree className="w-3.5 h-3.5 text-brand-500" />
-                  <span>Select Tax Group *</span>
-                </label>
-                <select
-                  required
-                  value={taxGroup}
-                  onChange={(e) => {
-                    handleTaxGroupChange(e.target.value);
-                    if (e.target.value) setShowGroupSelect(false);
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer text-xs transition-all shadow-2xs"
-                >
-                  <option value="">-- Select a Tax Group --</option>
-                  {availableTaxGroups && availableTaxGroups.length > 0 ? (
-                    availableTaxGroups.map((g) => (
-                      <option key={g._id || g.groupName} value={g.groupName}>
-                        {g.groupName} {g.groupCode ? `(${g.groupCode})` : ''}
-                      </option>
-                    ))
-                  ) : (
-                    <option value="" disabled>No Tax Groups available (Create in Tax Group Master first)</option>
-                  )}
-                </select>
-              </div>
-            )}
+            {/* Keep the tax group selector in place while the rest of the form opens below it. */}
+            <div className="bg-light-bg/40 dark:bg-dark-cardSecondary/40 p-3.5 rounded-xl border border-light-border dark:border-dark-border">
+              <label className="block text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5 flex items-center gap-1.5">
+                <FolderTree className="w-3.5 h-3.5 text-brand-500" />
+                <span>Select Tax Group *</span>
+              </label>
+              <select
+                required
+                value={taxGroup}
+                onChange={(e) => handleTaxGroupChange(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer text-xs transition-all shadow-2xs"
+              >
+                <option value="">-- Select a Tax Group --</option>
+                {availableTaxGroups && availableTaxGroups.length > 0 ? (
+                  availableTaxGroups.map((g) => (
+                    <option key={g._id || g.groupName} value={g.groupName}>
+                      {g.groupName} {g.groupCode ? `(${g.groupCode})` : ''}
+                    </option>
+                  ))
+                ) : (
+                  <option value="" disabled>No Tax Groups available (Create in Tax Group Master first)</option>
+                )}
+              </select>
+            </div>
           </div>
 
           {!taxGroup ? (
@@ -808,34 +875,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 />
               </div>
 
-              {/* Dynamic Suggestions for this Tax Group */}
-              {currentConfig?.suggestions && currentConfig.suggestions.length > 0 && (
-                <div className="sm:col-span-2">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-[13px] font-semibold text-brand-600 dark:text-brand-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Common Statutory Forms for {taxGroup} (Click to auto-configure):</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {currentConfig.suggestions.map((sug) => (
-                      <button
-                        key={sug.name}
-                        type="button"
-                        onClick={() => applyTaxSuggestion(sug)}
-                        className={`px-2.5 py-1 rounded-lg text-[13px] font-medium border transition-colors flex items-center gap-1 ${
-                          taxName === sug.name
-                            ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                            : 'bg-light-bg dark:bg-dark-bg border-light-border dark:border-dark-border text-light-textSecondary dark:text-dark-textSecondary hover:border-brand-500/50'
-                        }`}
-                        title={sug.desc}
-                      >
-                        <span>{sug.name}</span>
-                        <span className="text-[11px] opacity-75">({sug.freq})</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               {/* Filing Frequency - Logically filtered by Tax Group! */}
               <div>
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
@@ -874,6 +913,10 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   value={financialYear}
                   onChange={(e) => {
                     setFinancialYear(e.target.value);
+                    if (frequency === 'Monthly') {
+                      setMonthlyFilingPeriods(buildMonthlyFilingPeriods(e.target.value).slice(0, 1));
+                      setRemainingSavedMonthlyPeriods([]);
+                    }
                     setIsDirty(true);
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
@@ -961,6 +1004,143 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
               </h3>
             </div>
 
+            {frequency === 'Monthly' ? (
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                      Monthly Filing Schedule
+                    </h4>
+                    <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-0.5">
+                      Select period dates, filing dates, and any extended dates for each month.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={monthlyFilingPeriods.length >= 12}
+                    onClick={() => {
+                      if (remainingSavedMonthlyPeriods.length > 0) {
+                        setMonthlyFilingPeriods((periods) => [
+                          ...periods,
+                          remainingSavedMonthlyPeriods[0],
+                        ]);
+                        setRemainingSavedMonthlyPeriods((periods) => periods.slice(1));
+                      } else {
+                        setMonthlyFilingPeriods((periods) => {
+                          const nextPeriod = buildMonthlyFilingPeriods(financialYear)[periods.length];
+                          return nextPeriod ? [...periods, nextPeriod] : periods;
+                        });
+                      }
+                      setIsDirty(true);
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add More
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {monthlyFilingPeriods.map((period, index) => (
+                    <div
+                      key={index}
+                      className="p-3 rounded-xl bg-light-bg/50 dark:bg-dark-bg/50 border border-light-border dark:border-dark-border"
+                    >
+                      <h5 className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary mb-2">
+                        {period.periodFrom
+                          ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
+                              month: 'long',
+                              year: 'numeric',
+                            })
+                          : `Additional Period ${index - 11}`}
+                      </h5>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            From Date *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={period.periodFrom}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMonthlyFilingPeriods((periods) =>
+                                periods.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, periodFrom: value } : item
+                                )
+                              );
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            To Date *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={period.periodTo}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMonthlyFilingPeriods((periods) =>
+                                periods.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, periodTo: value } : item
+                                )
+                              );
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Filing Date *
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            value={period.filingDate}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMonthlyFilingPeriods((periods) =>
+                                periods.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, filingDate: value } : item
+                                )
+                              );
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Extended Date
+                          </label>
+                          <input
+                            type="date"
+                            value={period.extendedDate}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setMonthlyFilingPeriods((periods) =>
+                                periods.map((item, itemIndex) =>
+                                  itemIndex === index ? { ...item, extendedDate: value } : item
+                                )
+                              );
+                              setIsDirty(true);
+                            }}
+                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
@@ -1116,414 +1296,10 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   : 'Not set'}
               </span>
             </div>
-          </div>
-
-          {/* SECTION C: FILING & SUBMISSION (LOGICALLY CONDITIONAL!) */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center justify-between pb-2 border-b border-light-border/60 dark:border-dark-border/60">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-status-purple" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-light-textPrimary dark:text-dark-textPrimary">
-                  Section C: Client Filing & Submission
-                </h3>
-              </div>
-              <span className="text-[13px] text-light-textMuted dark:text-dark-textMuted">
-                {selectedClientId ? 'Client Linked (Filing Mode)' : 'Master Template Mode'}
-              </span>
-            </div>
-
-            {/* Link Client Selector */}
-            <div>
-              <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                Link Client (Choose a client to record a specific return submission)
-              </label>
-              <select
-                value={selectedClientId}
-                onChange={(e) => {
-                  setSelectedClientId(e.target.value);
-                  setIsDirty(true);
-                }}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
-              >
-                <option value="">
-                  -- Reusable Master Rule (No Client - Template for all clients) --
-                </option>
-                {clients.map((c) => (
-                  <option key={c._id} value={c._id}>
-                    {c.businessName || c.name} ({c.groupName ? `${c.groupName} - ` : ''}
-                    {c.pan})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* If NO client is selected, show helpful explanation and hide submission clutter! */}
-            {!selectedClientId ? (
-              <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-[13px] text-brand-700 dark:text-brand-300 flex items-start gap-2">
-                <Info className="w-4 h-4 shrink-0 mt-0.5 text-brand-500" />
-                <div>
-                  <strong>Reusable Master Rule Mode:</strong> You are creating a reusable statutory rule
-                  for <strong>{taxName || taxGroup}</strong>. Submission dates, ARN numbers, and filing
-                  receipts are tracked individually when returns are filed for specific clients in the{' '}
-                  <em>Client Filings</em> tab.
-                </div>
-              </div>
-            ) : (
-              /* If client IS selected, show actual filing details! */
-              <div className="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800 space-y-4 animate-in fade-in duration-200">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Filing Status *
-                    </label>
-                    <select
-                      value={filingStatus}
-                      onChange={(e) => {
-                        setFilingStatus(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Ready to File">Ready to File</option>
-                      <option value="Submitted">Submitted</option>
-                      <option value="Filed">Filed</option>
-                      <option value="Rejected">Rejected</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Actual Submission Date
-                    </label>
-                    <input
-                      type="date"
-                      value={actualSubmissionDate}
-                      onChange={(e) => {
-                        setActualSubmissionDate(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Filing Reference / ARN / Ack #
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. ARN-AA2611260012948"
-                      value={acknowledgementNumber}
-                      onChange={(e) => {
-                        setAcknowledgementNumber(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-mono focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Submission Method
-                    </label>
-                    <select
-                      value={submissionMethod}
-                      onChange={(e) => {
-                        setSubmissionMethod(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                    >
-                      <option value="Portal">Government Portal Direct</option>
-                      <option value="Utility">Offline JSON / Utility</option>
-                      <option value="API">API Gateway</option>
-                      <option value="Offline">Paper / Facilitation Center</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Submitted By
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Tosif Raza (CA Admin)"
-                      value={submittedBy}
-                      onChange={(e) => {
-                        setSubmittedBy(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
+              </>
             )}
           </div>
 
-          {/* SECTION D: RECONCILIATION MANAGEMENT (LOGICALLY FILTERED BY TAX GROUP!) */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center justify-between pb-2 border-b border-light-border/60 dark:border-dark-border/60">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-status-green" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-light-textPrimary dark:text-dark-textPrimary">
-                  Section D: Reconciliation Management
-                </h3>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={reconciliationRequired}
-                  onChange={(e) => {
-                    setReconciliationRequired(e.target.checked);
-                    setIsDirty(true);
-                  }}
-                  className="w-4 h-4 text-brand-500 rounded border-light-border"
-                />
-                <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
-                  Reconciliation Required for {taxGroup}?
-                </span>
-              </label>
-            </div>
-
-            {reconciliationRequired && (
-              <div className="p-4 rounded-xl bg-light-bg/70 dark:bg-dark-bg/70 border border-light-border dark:border-dark-border space-y-4 animate-in fade-in duration-200">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Reconciliation Type - FILTERED FOR THIS TAX GROUP ONLY! */}
-                  <div className={selectedClientId ? '' : 'sm:col-span-2'}>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                      Reconciliation Scope ({taxGroup}) *
-                    </label>
-                    <select
-                      value={reconciliationType}
-                      onChange={(e) => {
-                        setReconciliationType(e.target.value);
-                        setIsDirty(true);
-                      }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-medium focus:outline-none"
-                    >
-                      {currentConfig.reconciliationTypes.map((rt) => (
-                        <option key={rt} value={rt}>
-                          {rt}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {selectedClientId && (
-                    <div>
-                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                        Reconciliation Status
-                      </label>
-                      <select
-                        value={reconciliationStatus}
-                        onChange={(e) => {
-                          setReconciliationStatus(e.target.value);
-                          setIsDirty(true);
-                        }}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                      >
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Reconciled">Reconciled (Matched)</option>
-                        <option value="Mismatch">Mismatch (Difference)</option>
-                        <option value="Under Review">Under Review</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
-
-                {/* Amounts are only shown if a client filing is active! */}
-                {selectedClientId && (
-                  <div className="space-y-4 pt-2 border-t border-light-border/60 dark:border-dark-border/60">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Amount as per Books (₹)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={amountAsPerBooks}
-                          onChange={(e) => {
-                            setAmountAsPerBooks(e.target.value);
-                            setIsDirty(true);
-                          }}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-mono focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Amount as per Statement / Portal (₹)
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={amountAsPerStatement}
-                          onChange={(e) => {
-                            setAmountAsPerStatement(e.target.value);
-                            setIsDirty(true);
-                          }}
-                          className="w-full px-3.5 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-mono focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Calculated Difference Indicator */}
-                    <div className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-light-textSecondary dark:text-dark-textSecondary">
-                          Difference (Books − Portal):
-                        </span>
-                        <span
-                          className={`font-mono font-bold text-xs ${
-                            differenceAmount === 0 ? 'text-status-green' : 'text-status-red'
-                          }`}
-                        >
-                          ₹ {differenceAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-                        </span>
-                      </div>
-                      <div>
-                        {differenceAmount === 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-status-greenLight dark:bg-status-green/20 text-status-green">
-                            <CheckCircle2 className="w-3 h-3" /> Fully Matched
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-status-redLight dark:bg-status-red/20 text-status-red">
-                            <ShieldAlert className="w-3 h-3" /> Mismatch Detected
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* SECTION E: REMINDERS & COMPLIANCE ASSIGNMENT */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 pb-2 border-b border-light-border/60 dark:border-dark-border/60">
-              <span className="w-2 h-2 rounded-full bg-status-red" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-light-textPrimary dark:text-dark-textPrimary">
-                Section E: Reminders & Responsibility
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Automated Reminders
-                </label>
-                <select
-                  value={reminderEnabled ? 'Yes' : 'No'}
-                  onChange={(e) => {
-                    setReminderEnabled(e.target.value === 'Yes');
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                >
-                  <option value="Yes">Yes (Enabled)</option>
-                  <option value="No">No (Disabled)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Compliance Priority
-                </label>
-                <select
-                  value={priority}
-                  onChange={(e) => {
-                    setPriority(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                  <option value="Critical">Critical</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Assigned Employee
-                </label>
-                <select
-                  value={assignedEmployeeId}
-                  onChange={(e) => {
-                    setAssignedEmployeeId(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                >
-                  <option value="">Select Assignee</option>
-                  {employees.map((emp) => (
-                    <option key={emp._id} value={emp._id}>
-                      {emp.name} ({emp.designation})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Reminder Days Selector */}
-            {reminderEnabled && (
-              <div>
-                <label className="block font-semibold mb-1.5 text-light-textPrimary dark:text-dark-textPrimary">
-                  Send Reminders Prior to Due Date:
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {reminderOptions.map((days) => {
-                    const active = reminderDays.includes(days);
-                    return (
-                      <button
-                        key={days}
-                        type="button"
-                        onClick={() => toggleReminderDay(days)}
-                        className={`px-3 py-1 rounded-lg text-[13px] font-semibold border transition-all ${
-                          active
-                            ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                            : 'bg-light-bg dark:bg-dark-bg text-light-textSecondary dark:text-dark-textSecondary border-light-border dark:border-dark-border hover:border-brand-500/40'
-                        }`}
-                      >
-                        {days} Days Before
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Approval Checkbox */}
-            <div className="flex items-center gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="approvalRequired"
-                checked={approvalRequired}
-                onChange={(e) => {
-                  setApprovalRequired(e.target.checked);
-                  setIsDirty(true);
-                }}
-                className="w-4 h-4 text-brand-500 rounded border-light-border"
-              />
-              <label
-                htmlFor="approvalRequired"
-                className="font-semibold text-light-textPrimary dark:text-dark-textPrimary cursor-pointer"
-              >
-                Requires CA Partner Approval before portal upload
-              </label>
-            </div>
-          </div>
               </>
             )}
         </form>

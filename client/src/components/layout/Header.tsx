@@ -6,14 +6,11 @@ import {
   Sun,
   Moon,
   Menu,
-  ChevronDown,
-  Building,
   Check,
   CheckCheck,
   ExternalLink,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { NotificationItem } from '../../types';
 
@@ -23,7 +20,6 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { theme, toggleTheme } = useTheme();
-  const { organization } = useAuth();
   const navigate = useNavigate();
 
   // Search state
@@ -284,13 +280,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Organization Selector */}
-        <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-light-bg dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
-          <Building className="w-3.5 h-3.5 text-brand-500" />
-          <span>{organization?.name || 'RIZ & Associates'}</span>
-          <ChevronDown className="w-3.5 h-3.5 text-light-textMuted dark:text-dark-textMuted" />
         </div>
 
         {/* Theme Switcher Toggle */}
