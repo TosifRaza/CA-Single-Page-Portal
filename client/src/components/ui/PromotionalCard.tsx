@@ -51,14 +51,14 @@ export const PromotionalCard: React.FC = () => {
       {/* Working Action Button */}
       <div className="relative z-10 mt-6">
         <button
-          onClick={() => navigate('/reports')}
+          onClick={() => navigate('/works')}
           className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md active:scale-95 ${
             theme === 'light'
               ? 'bg-white text-brand-600 hover:bg-blue-50 hover:shadow-white/20'
               : 'bg-brand-500 text-white hover:bg-brand-600 hover:shadow-brand-500/30'
           }`}
         >
-          <span>View Reports</span>
+          <span>View Filings</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>

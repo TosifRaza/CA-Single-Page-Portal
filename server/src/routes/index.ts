@@ -57,6 +57,8 @@ router.delete('/tax-filings/:id', authenticate, requireRole(['Super Admin', 'CA 
 
 // --- Work Master Routes ---
 router.get('/work-masters', authenticate, workMasterCtrl.getWorkMasters);
+router.get('/work-masters/:id/assignments', authenticate, workMasterCtrl.getWorkMasterAssignments);
+router.post('/work-masters/:id/assign', authenticate, requireRole(['Super Admin', 'CA Admin', 'Manager']), workMasterCtrl.assignWorkMasterToEmployee);
 router.post('/work-masters', authenticate, requireRole(['Super Admin', 'CA Admin', 'Manager']), workMasterCtrl.createWorkMaster);
 router.put('/work-masters/:id', authenticate, requireRole(['Super Admin', 'CA Admin', 'Manager']), workMasterCtrl.updateWorkMaster);
 router.delete('/work-masters/:id', authenticate, requireRole(['Super Admin', 'CA Admin']), workMasterCtrl.deleteWorkMaster);
@@ -84,6 +86,7 @@ router.post('/employees', authenticate, requireRole(['Super Admin', 'CA Admin'])
 router.put('/employees/:id', authenticate, requireRole(['Super Admin', 'CA Admin']), empCtrl.updateEmployee);
 router.delete('/employees/:id', authenticate, requireRole(['Super Admin', 'CA Admin']), empCtrl.deleteEmployee);
 router.get('/employees/:id/works', authenticate, empCtrl.getEmployeeAssignedWorks);
+router.post('/employees/:id/assign-work', authenticate, requireRole(['Super Admin', 'CA Admin', 'Manager']), empCtrl.assignWorkToEmployee);
 
 // --- Other Masters (FY, Branch, Service, DocCategory) ---
 router.get('/financial-years', authenticate, mastersCtrl.getFinancialYears);

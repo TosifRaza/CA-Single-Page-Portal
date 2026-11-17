@@ -39,9 +39,14 @@ describe('Frontend UI Components', () => {
   });
 
   it('Renders Upcoming Deadlines table matching reference items', () => {
+    const sampleDeadlines = [
+      { id: '1', taxWork: 'GSTR-1 (GST)', client: 'ABC Traders', dueDate: '11 Nov 2026', status: 'Upcoming' as const },
+      { id: '2', taxWork: 'TDS Return', client: 'XYZ Pvt Ltd', dueDate: '15 Nov 2026', status: 'Upcoming' as const },
+    ];
+
     render(
       <BrowserRouter>
-        <UpcomingDeadlinesWidget />
+        <UpcomingDeadlinesWidget deadlines={sampleDeadlines} />
       </BrowserRouter>
     );
 

@@ -61,22 +61,10 @@ export const WorkAssignmentPage: React.FC = () => {
         setRecentAssignments(aRes.data.data.works);
       }
     } catch (e) {
-      // Fallback options
-      setClients([
-        { _id: 'c1', name: 'ABC Traders', businessName: 'ABC Traders', clientCode: 'CL-0001', pan: 'AABCA1234F', mobile: '9830112233', status: 'active', clientType: 'Business', businessType: 'Proprietorship', createdAt: '' },
-        { _id: 'c2', name: 'XYZ Pvt Ltd', businessName: 'XYZ Pvt Ltd', clientCode: 'CL-0002', pan: 'AAACX5678G', mobile: '9820556677', status: 'active', clientType: 'Company', businessType: 'Private Limited', createdAt: '' },
-        { _id: 'c3', name: 'Global Solutions', businessName: 'Global Solutions', clientCode: 'CL-0003', pan: 'AABCG9999K', mobile: '9811889900', status: 'active', clientType: 'Company', businessType: 'Public Limited', createdAt: '' },
-      ]);
-      setWorkMasters([
-        { _id: 'w1', workId: 1, workName: 'GSTR-1 Filing', category: 'GST', timeline: '2 Days', defaultPriority: 'High', status: 'Active', createdAt: '' },
-        { _id: 'w2', workId: 2, workName: 'ITR Filing', category: 'Income Tax', timeline: '5 Days', defaultPriority: 'Medium', status: 'Active', createdAt: '' },
-        { _id: 'w3', workId: 3, workName: 'TDS Return Filing', category: 'TDS', timeline: '3 Days', defaultPriority: 'Medium', status: 'Active', createdAt: '' },
-      ]);
-      setEmployees([
-        { _id: 'e1', employeeCode: 'EMP-0001', name: 'Tosif Raza', email: 'tosif@rizassociates.com', mobile: '9876543210', designation: 'CA Admin', department: 'Tax', status: 'active', createdAt: '' },
-        { _id: 'e2', employeeCode: 'EMP-0002', name: 'Anita Desai', email: 'anita@rizassociates.com', mobile: '9876543211', designation: 'GST Manager', department: 'Indirect Tax', status: 'active', createdAt: '' },
-        { _id: 'e3', employeeCode: 'EMP-0003', name: 'Vikram Roy', email: 'vikram@rizassociates.com', mobile: '9876543212', designation: 'Tax Senior', department: 'Direct Tax', status: 'active', createdAt: '' },
-      ]);
+      console.error('Error loading dropdown data:', e);
+      setClients([]);
+      setWorkMasters([]);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -147,6 +135,31 @@ export const WorkAssignmentPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Dependency Warning if no work templates configured */}
+      {workMasters.length === 0 && !loading && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                Dependency Notice: Work Assignment requires configured Work Templates
+              </h4>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Work assignment depends on Work Master (which depends on Tax Master). Currently 0 Work Templates exist. Please configure Work Templates first.
+              </p>
+            </div>
+          </div>
+          <NavLink
+            to="/masters/work"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 self-start sm:self-auto transition-all shadow-sm"
+          >
+            <span>Go to Work Master</span>
+          </NavLink>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Assignment Form Card matching screenshot exactly */}
         <div className="lg:col-span-5 p-6 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark transition-colors">
@@ -183,11 +196,14 @@ export const WorkAssignmentPage: React.FC = () => {
                 className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
               >
                 <option value="">Select Work</option>
-                {workMasters.map((w) => (
-                  <option key={w._id} value={w._id}>
-                    {w.workName} ({w.category}) - {w.timeline}
-                  </option>
-                ))}
+                {workMasters.map((w: any) => {
+                  const tName = typeof w.taxId === 'object' && w.taxId?.taxName ? w.taxId.taxName : '';
+                  return (
+                    <option key={w._id} value={w._id}>
+                      {w.workName} {tName ? `[Tax: ${tName}]` : `[${w.category}]`} - {w.timeline}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -253,7 +269,12 @@ export const WorkAssignmentPage: React.FC = () => {
 
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all"
+                disabled={workMasters.length === 0}
+                className={`px-6 py-2.5 rounded-xl font-bold transition-all ${
+                  workMasters.length === 0
+                    ? 'bg-gray-400 dark:bg-gray-700 text-gray-200 cursor-not-allowed opacity-75'
+                    : 'bg-brand-500 hover:bg-brand-600 text-white shadow-md shadow-brand-500/20 active:scale-95'
+                }`}
               >
                 Assign Work
               </button>
@@ -296,6 +317,11 @@ export const WorkAssignmentPage: React.FC = () => {
                         <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
                           {a.workMasterId?.workName || 'Tax Filing'}
                         </div>
+                        {(a.taxName || a.workMasterId?.taxId?.taxName) && (
+                          <div className="text-[10px] text-brand-600 dark:text-brand-400 font-bold flex items-center gap-1 mt-0.5">
+                            <span>Tax: {a.taxName || a.workMasterId?.taxId?.taxName}</span>
+                          </div>
+                        )}
                         <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary">
                           {a.clientId?.businessName || a.clientId?.name}
                         </div>

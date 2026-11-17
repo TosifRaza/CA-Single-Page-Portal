@@ -26,8 +26,8 @@ export const ClientsPage: React.FC = () => {
   const [search, setSearch] = useState('');
   const [clientTypeFilter, setClientTypeFilter] = useState('All');
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(25);
-  const [totalCount, setTotalCount] = useState(248);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Client Details Modal
   const [selectedClient, setSelectedClient] = useState<any>(null);

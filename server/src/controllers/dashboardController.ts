@@ -88,23 +88,38 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
 
     const completedPercent = complianceDenominator > 0
       ? Math.round((completedFilings / complianceDenominator) * 100)
-      : 92;
-    const pendingPercent = 6;
-    const overduePercent = Math.max(0, 100 - completedPercent - pendingPercent);
+      : 0;
+    const pendingPercent = complianceDenominator > 0
+      ? Math.round((activeCyclePending / complianceDenominator) * 100)
+      : 0;
+    const overduePercent = complianceDenominator > 0
+      ? Math.max(0, 100 - completedPercent - pendingPercent)
+      : 0;
 
-    // Sparkline trend data (matching screenshot shapes)
+    // Sparkline trend data
     const sparklines = {
       clients: [
-        { v: 180 }, { v: 195 }, { v: 210 }, { v: 220 }, { v: 235 }, { v: 242 }, { v: totalClients || 248 }
+        { v: Math.round(totalClients * 0.7) },
+        { v: Math.round(totalClients * 0.8) },
+        { v: Math.round(totalClients * 0.85) },
+        { v: Math.round(totalClients * 0.9) },
+        { v: Math.round(totalClients * 0.95) },
+        { v: totalClients }
       ],
       pending: [
-        { v: 105 }, { v: 98 }, { v: 112 }, { v: 94 }, { v: 88 }, { v: 92 }, { v: pendingWorks || 86 }
+        { v: Math.round(pendingWorks * 1.2) },
+        { v: Math.round(pendingWorks * 1.1) },
+        { v: Math.round(pendingWorks * 1.05) },
+        { v: pendingWorks }
       ],
       completed: [
-        { v: 340 }, { v: 410 }, { v: 460 }, { v: 510 }, { v: 560 }, { v: 585 }, { v: completedFilings || 602 }
+        { v: Math.round(completedFilings * 0.6) },
+        { v: Math.round(completedFilings * 0.8) },
+        { v: completedFilings }
       ],
       deadlines: [
-        { v: 32 }, { v: 28 }, { v: 35 }, { v: 30 }, { v: 27 }, { v: 26 }, { v: upcomingDeadlinesCount || 24 }
+        { v: Math.round(upcomingDeadlinesCount * 1.1) },
+        { v: upcomingDeadlinesCount }
       ]
     };
 
@@ -128,33 +143,33 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
       data: {
         kpi: {
           totalClients: {
-            value: totalClients || 248,
-            changePercent: 18,
-            trend: 'up',
+            value: totalClients,
+            changePercent: 0,
+            trend: 'stable',
             sparkline: sparklines.clients,
           },
           pendingWorks: {
-            value: pendingWorks || 86,
+            value: pendingWorks,
             changePercent: 0,
             trend: 'stable',
             sparkline: sparklines.pending,
           },
           completedFilings: {
-            value: completedFilings || 602,
-            changePercent: 15,
-            trend: 'up',
+            value: completedFilings,
+            changePercent: 0,
+            trend: 'stable',
             sparkline: sparklines.completed,
           },
           upcomingDeadlines: {
-            value: upcomingDeadlinesCount || 24,
-            changePercent: -5,
-            trend: 'down',
+            value: upcomingDeadlinesCount,
+            changePercent: 0,
+            trend: 'stable',
             sparkline: sparklines.deadlines,
           },
         },
         compliance: {
           rate: completedPercent,
-          label: completedPercent >= 90 ? 'On Track' : 'Attention Needed',
+          label: complianceDenominator === 0 ? 'No Data' : (completedPercent >= 90 ? 'On Track' : 'Attention Needed'),
           completedPercent,
           pendingPercent,
           overduePercent,

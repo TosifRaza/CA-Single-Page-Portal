@@ -17,6 +17,10 @@ import {
   PlusCircle,
   FileText,
   AlertCircle,
+  Users,
+  Briefcase,
+  Building,
+  Eye,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -31,11 +35,116 @@ export const WorkMasterPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('Active');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(4);
+  const [totalCount, setTotalCount] = useState(0);
 
   // Available Tax Masters for dropdown
   const [availableTaxes, setAvailableTaxes] = useState<TaxMasterItem[]>([]);
   const [loadingTaxes, setLoadingTaxes] = useState(false);
+
+  // Assignments Modal State (View employees assigned to this work)
+  const [selectedWorkForAssignments, setSelectedWorkForAssignments] = useState<WorkMasterItem | null>(null);
+  const [isAssignmentsModalOpen, setIsAssignmentsModalOpen] = useState(false);
+  const [loadingWorkAssignments, setLoadingWorkAssignments] = useState(false);
+  const [workAssignmentsList, setWorkAssignmentsList] = useState<any[]>([]);
+  const [employeeSummaries, setEmployeeSummaries] = useState<any[]>([]);
+  const [totalWorkAssignmentsCount, setTotalWorkAssignmentsCount] = useState(0);
+  const [assignmentsViewMode, setAssignmentsViewMode] = useState<'employeeGrouped' | 'allList'>('employeeGrouped');
+
+  // Quick Assign form state inside assignments modal
+  const [showQuickAssignForm, setShowQuickAssignForm] = useState(false);
+  const [allEmployeesList, setAllEmployeesList] = useState<any[]>([]);
+  const [allClientsList, setAllClientsList] = useState<any[]>([]);
+  const [submittingQuickAssign, setSubmittingQuickAssign] = useState(false);
+  const [quickAssignData, setQuickAssignData] = useState({
+    employeeId: '',
+    clientId: '',
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    priority: 'Medium' as 'Low' | 'Medium' | 'High' | 'Urgent',
+    remarks: '',
+  });
+
+  const loadDropdownEmployeesAndClients = async () => {
+    try {
+      const [eRes, cRes] = await Promise.all([
+        api.get('/employees?limit=100'),
+        api.get('/clients?limit=100'),
+      ]);
+      if (eRes.data?.data?.employees) setAllEmployeesList(eRes.data.data.employees);
+      if (cRes.data?.data?.clients) setAllClientsList(cRes.data.data.clients);
+    } catch (e) {
+      console.error('Error loading employees/clients dropdown:', e);
+    }
+  };
+
+  const handleOpenWorkAssignments = async (work: WorkMasterItem) => {
+    setSelectedWorkForAssignments(work);
+    setIsAssignmentsModalOpen(true);
+    setShowQuickAssignForm(false);
+    setLoadingWorkAssignments(true);
+    loadDropdownEmployeesAndClients();
+
+    try {
+      const res = await api.get(`/work-masters/${work._id}/assignments`);
+      if (res.data) {
+        setWorkAssignmentsList(res.data.data || []);
+        setEmployeeSummaries(res.data.employeeSummary || []);
+        setTotalWorkAssignmentsCount(res.data.totalAssignments || 0);
+      }
+    } catch (err) {
+      console.error('Failed to load work assignments:', err);
+      toast.error('Could not load assigned team');
+    } finally {
+      setLoadingWorkAssignments(false);
+    }
+  };
+
+  const handleOpenQuickAssign = (work: WorkMasterItem) => {
+    if (availableTaxes.length === 0) {
+      toast.error('Cannot assign work: Tax Master & Compliance has 0 active taxes. Work assignment strictly depends on active taxes.');
+      return;
+    }
+    setSelectedWorkForAssignments(work);
+    setIsAssignmentsModalOpen(true);
+    setShowQuickAssignForm(true);
+    loadDropdownEmployeesAndClients();
+    setQuickAssignData({
+      employeeId: allEmployeesList[0]?._id || '',
+      clientId: allClientsList[0]?._id || '',
+      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      priority: work.defaultPriority || 'Medium',
+      remarks: '',
+    });
+  };
+
+  const handleQuickAssignSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedWorkForAssignments) return;
+    if (!quickAssignData.employeeId || !quickAssignData.clientId) {
+      toast.error('Please select both an Employee and a Client');
+      return;
+    }
+
+    try {
+      setSubmittingQuickAssign(true);
+      await api.post(`/work-masters/${selectedWorkForAssignments._id}/assign`, quickAssignData);
+      toast.success('Work template assigned successfully');
+      setShowQuickAssignForm(false);
+
+      // Re-fetch assignments
+      const res = await api.get(`/work-masters/${selectedWorkForAssignments._id}/assignments`);
+      if (res.data) {
+        setWorkAssignmentsList(res.data.data || []);
+        setEmployeeSummaries(res.data.employeeSummary || []);
+        setTotalWorkAssignmentsCount(res.data.totalAssignments || 0);
+      }
+      // Re-fetch parent works list
+      fetchWorks();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to assign work');
+    } finally {
+      setSubmittingQuickAssign(false);
+    }
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,6 +219,11 @@ export const WorkMasterPage: React.FC = () => {
 
   // Selected Tax details object
   const selectedTax = availableTaxes.find((t) => t._id === formData.taxId);
+  const selectedWorkTax =
+    selectedWorkForAssignments &&
+    (typeof selectedWorkForAssignments.taxId === 'object' && selectedWorkForAssignments.taxId
+      ? (selectedWorkForAssignments.taxId as any)
+      : availableTaxes.find((t) => t._id === selectedWorkForAssignments?.taxId));
 
   // When user selects a Tax Name
   const handleTaxSelect = (taxId: string) => {
@@ -291,13 +405,50 @@ export const WorkMasterPage: React.FC = () => {
         </div>
 
         <button
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all self-start sm:self-auto"
+          onClick={() => {
+            if (availableTaxes.length === 0) {
+              toast.error('Cannot add work template: Tax Master has 0 taxes. Please add a Tax in Tax Master first.');
+              return;
+            }
+            openCreateModal();
+          }}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all self-start sm:self-auto ${
+            availableTaxes.length === 0
+              ? 'bg-gray-400 dark:bg-gray-700 text-gray-200 cursor-not-allowed opacity-75'
+              : 'bg-brand-500 hover:bg-brand-600 text-white shadow-brand-500/20 active:scale-95'
+          }`}
+          title={availableTaxes.length === 0 ? 'Tax Master is empty. Please add a Tax first.' : 'Add New Work'}
         >
           <Plus className="w-4 h-4" />
           <span>Add New Work</span>
         </button>
       </div>
+
+      {/* Dependency Warning Banner when 0 Taxes configured in Tax Master */}
+      {availableTaxes.length === 0 && !loadingTaxes && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
+              <AlertCircle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                Dependency Notice: Work Master strictly depends on Tax Master & Compliance
+              </h4>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Currently 0 active Taxes are configured in Tax Master. You cannot create work templates or assign works until at least one Tax is added.
+              </p>
+            </div>
+          </div>
+          <NavLink
+            to="/masters/tax"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 self-start sm:self-auto transition-all shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Go to Tax Master</span>
+          </NavLink>
+        </div>
+      )}
 
       {/* Main Content Card */}
       <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden">
@@ -373,13 +524,14 @@ export const WorkMasterPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                 <th className="py-3 px-4 font-semibold w-12">ID</th>
                 <th className="py-3 px-4 font-semibold">Work Name</th>
-                <th className="py-3 px-4 font-semibold">Associated Tax (Tax Master)</th>
-                <th className="py-3 px-4 font-semibold">Category</th>
+                <th className="py-3 px-4 font-semibold">Tax Name</th>
+                <th className="py-3 px-4 font-semibold">Tax Group</th>
                 <th className="py-3 px-4 font-semibold">Timeline</th>
                 <th className="py-3 px-4 font-semibold">Due Date Rule</th>
+                <th className="py-3 px-4 font-semibold">Assigned Team</th>
                 <th className="py-3 px-4 font-semibold">Status</th>
                 <th className="py-3 px-4 font-semibold text-right">Action</th>
               </tr>
@@ -387,13 +539,13 @@ export const WorkMasterPage: React.FC = () => {
             <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-light-textMuted">
+                  <td colSpan={9} className="py-8 text-center text-light-textMuted">
                     Loading work templates...
                   </td>
                 </tr>
               ) : works.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-light-textMuted">
+                  <td colSpan={9} className="py-8 text-center text-light-textMuted">
                     No work templates found. Click "+ Add New Work" to create one.
                   </td>
                 </tr>
@@ -401,8 +553,8 @@ export const WorkMasterPage: React.FC = () => {
                 works.map((work) => {
                   const associatedTax =
                     typeof work.taxId === 'object' && work.taxId
-                      ? work.taxId
-                      : availableTaxes.find((t) => t._id === work.taxId);
+                        ? work.taxId
+                        : availableTaxes.find((t) => t._id === work.taxId);
 
                   return (
                     <tr
@@ -415,14 +567,12 @@ export const WorkMasterPage: React.FC = () => {
                       <td className="py-3 px-4 text-light-textPrimary dark:text-dark-textPrimary font-bold">
                         {work.workName}
                       </td>
-                      <td className="py-3 px-4">
-                        {associatedTax ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 border border-brand-200/80 dark:border-brand-500/20 text-brand-700 dark:text-brand-300 font-semibold text-[11px]">
-                            <Receipt className="w-3 h-3 text-brand-500" />
+                      {/* Explicit Tax Name Column matching Tax Master */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {associatedTax?.taxName ? (
+                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-200/80 dark:border-brand-500/20 text-brand-700 dark:text-brand-300 font-bold text-xs shadow-2xs">
+                            <Receipt className="w-3.5 h-3.5 text-brand-500 shrink-0" />
                             <span>{associatedTax.taxName}</span>
-                            <span className="text-[10px] opacity-75 font-normal">
-                              ({associatedTax.taxGroup})
-                            </span>
                           </div>
                         ) : (
                           <span className="text-light-textMuted dark:text-dark-textMuted italic text-[11px]">
@@ -430,17 +580,54 @@ export const WorkMasterPage: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary font-medium">
-                        <span className="px-2 py-0.5 rounded-md bg-light-border/60 dark:bg-dark-border/60 text-[10px] font-bold">
-                          {work.category}
+                      {/* Tax Group Column */}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
+                          {associatedTax?.taxGroup || work.category || 'GST'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary font-semibold">
+                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary font-semibold whitespace-nowrap">
                         {work.timeline}
                       </td>
-                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary text-[11px]">
+                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary text-[11px] whitespace-nowrap">
                         {associatedTax?.dueDateRule || '—'}
                       </td>
+
+                      {/* Assigned Team & Client Allocations */}
+                      <td className="py-3 px-4">
+                        {(work.assignedEmployeesCount ?? 0) > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenWorkAssignments(work)}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 transition-all cursor-pointer group"
+                            title="Click to view assigned employees and clients"
+                          >
+                            <Users className="w-3.5 h-3.5 text-purple-500" />
+                            <span>
+                              {work.assignedEmployeesCount}{' '}
+                              {work.assignedEmployeesCount === 1 ? 'Employee' : 'Employees'}
+                            </span>
+                            <span className="text-[10px] opacity-75 font-normal">
+                              ({work.totalAssignmentsCount} tasks)
+                            </span>
+                            <ChevronRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-light-textMuted dark:text-dark-textMuted italic text-[11px]">
+                              Unassigned
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuickAssign(work)}
+                              className="text-[10px] text-brand-500 hover:underline font-semibold"
+                            >
+                              + Assign
+                            </button>
+                          </div>
+                        )}
+                      </td>
+
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
@@ -453,11 +640,19 @@ export const WorkMasterPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <div className="inline-flex items-center gap-2">
+                        <div className="inline-flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenWorkAssignments(work)}
+                            className="p-1.5 rounded-lg text-light-textSecondary dark:text-dark-textSecondary hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-colors"
+                            title="View Assigned Team & Clients"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => openEditModal(work)}
-                            className="p-1 rounded text-light-textSecondary dark:text-dark-textSecondary hover:text-brand-500 hover:bg-light-bg dark:hover:bg-dark-card transition-colors"
+                            className="p-1.5 rounded-lg text-light-textSecondary dark:text-dark-textSecondary hover:text-brand-500 hover:bg-light-bg dark:hover:bg-dark-card transition-colors"
                             title="Edit Work"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -465,7 +660,7 @@ export const WorkMasterPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleDelete(work._id)}
-                            className="p-1 rounded text-light-textSecondary dark:text-dark-textSecondary hover:text-status-red hover:bg-light-bg dark:hover:bg-dark-card transition-colors"
+                            className="p-1.5 rounded-lg text-light-textSecondary dark:text-dark-textSecondary hover:text-status-red hover:bg-light-bg dark:hover:bg-dark-card transition-colors"
                             title="Delete Work"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -546,6 +741,26 @@ export const WorkMasterPage: React.FC = () => {
 
             {/* Modal Body */}
             <form id="workMasterForm" onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs">
+              {/* Warning if no taxes configured in Tax Master */}
+              {availableTaxes.length === 0 && !loadingTaxes && (
+                <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <div className="font-bold text-xs">Work Master strictly depends on Tax Master & Compliance</div>
+                    <div className="text-[11px] leading-relaxed">
+                      Currently 0 active Taxes are configured in Tax Master. You cannot create a work template without linking to an active Tax.
+                    </div>
+                    <NavLink
+                      to="/masters/tax"
+                      onClick={() => setIsModalOpen(false)}
+                      className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs"
+                    >
+                      <span>+ Go to Tax Master</span>
+                    </NavLink>
+                  </div>
+                </div>
+              )}
+
               {/* --- STEP 1: INITIAL 2 FIELDS (Work Name & Select Tax Name) --- */}
               <div className="p-4 rounded-xl border border-brand-200/80 dark:border-brand-500/20 bg-brand-50/30 dark:bg-brand-500/5 space-y-4">
                 <div className="text-[11px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
@@ -902,12 +1117,447 @@ export const WorkMasterPage: React.FC = () => {
                 <button
                   type="submit"
                   form="workMasterForm"
-                  disabled={submitting || (!formData.taxId && !editingWork)}
+                  disabled={submitting || (!formData.taxId && !editingWork) || availableTaxes.length === 0}
                   className="px-5 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : editingWork ? 'Update Work Template' : 'Save Work Template'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ========================================================================= */}
+      {/* MODAL 2: WORK MASTER ASSIGNMENTS & TEAM ALLOCATIONS */}
+      {/* ========================================================================= */}
+      {isAssignmentsModalOpen && selectedWorkForAssignments && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-5 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/40">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm">
+                  <Briefcase className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="font-bold text-base text-light-textPrimary dark:text-dark-textPrimary">
+                      {selectedWorkForAssignments.workName}
+                    </h3>
+                    {selectedWorkTax?.taxName && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-200/80 dark:border-brand-500/20 text-xs font-bold shadow-2xs">
+                        <Receipt className="w-3.5 h-3.5 text-brand-500" />
+                        <span>Tax Name: {selectedWorkTax.taxName}</span>
+                      </span>
+                    )}
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
+                      {selectedWorkTax?.taxGroup || selectedWorkForAssignments.category}
+                    </span>
+                  </div>
+                  <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                    Timeline: {selectedWorkForAssignments.timeline} • Priority: {selectedWorkForAssignments.defaultPriority}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowQuickAssignForm(!showQuickAssignForm)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{showQuickAssignForm ? 'Close Form' : 'Assign to Team Member'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAssignmentsModalOpen(false)}
+                  className="p-1.5 rounded-lg text-light-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary hover:bg-light-bg dark:hover:bg-dark-bg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {/* Quick KPI Stats Row */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
+                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                    <Briefcase className="w-3.5 h-3.5 text-purple-500" />
+                    Total Active Tasks
+                  </div>
+                  <div className="text-xl font-bold text-light-textPrimary dark:text-dark-textPrimary mt-1">
+                    {totalWorkAssignmentsCount}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
+                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                    <Users className="w-3.5 h-3.5 text-brand-500" />
+                    Assigned Employees
+                  </div>
+                  <div className="text-xl font-bold text-light-textPrimary dark:text-dark-textPrimary mt-1">
+                    {employeeSummaries.length}
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
+                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                    <Building className="w-3.5 h-3.5 text-emerald-500" />
+                    Unique Clients
+                  </div>
+                  <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                    {new Set(workAssignmentsList.map((w: any) => w.clientId?._id || w.clientId)).size}
+                  </div>
+                </div>
+              </div>
+
+              {/* Collapsible Assign Form */}
+              {showQuickAssignForm && (
+                <form
+                  onSubmit={handleQuickAssignSubmit}
+                  className="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20 space-y-3 animate-in fade-in"
+                >
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
+                      <Plus className="w-4 h-4" />
+                      Assign "{selectedWorkForAssignments.workName}" to an Employee
+                    </h4>
+                    <span className="text-[11px] text-light-textMuted">Fields marked with * are required</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                        Employee (Assignee) *
+                      </label>
+                      <select
+                        required
+                        value={quickAssignData.employeeId}
+                        onChange={(e) => setQuickAssignData({ ...quickAssignData, employeeId: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      >
+                        <option value="">Select Employee...</option>
+                        {allEmployeesList.map((emp) => (
+                          <option key={emp._id} value={emp._id}>
+                            {emp.name} ({emp.employeeCode} - {emp.designation})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                        Client *
+                      </label>
+                      <select
+                        required
+                        value={quickAssignData.clientId}
+                        onChange={(e) => setQuickAssignData({ ...quickAssignData, clientId: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      >
+                        <option value="">Select Client...</option>
+                        {allClientsList.map((c) => (
+                          <option key={c._id} value={c._id}>
+                            {c.businessName || c.name} ({c.clientCode || c.pan})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                        Due Date *
+                      </label>
+                      <input
+                        type="date"
+                        required
+                        value={quickAssignData.dueDate}
+                        onChange={(e) => setQuickAssignData({ ...quickAssignData, dueDate: e.target.value })}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                        Priority
+                      </label>
+                      <select
+                        value={quickAssignData.priority}
+                        onChange={(e) => setQuickAssignData({ ...quickAssignData, priority: e.target.value as any })}
+                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Urgent">Urgent</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary text-xs">
+                      Remarks / Instructions
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Assigned from Work Master template..."
+                      value={quickAssignData.remarks}
+                      onChange={(e) => setQuickAssignData({ ...quickAssignData, remarks: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowQuickAssignForm(false)}
+                      className="px-3 py-1.5 text-xs rounded-xl border border-light-border dark:border-dark-border text-light-textSecondary"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submittingQuickAssign}
+                      className="px-4 py-1.5 text-xs rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-50 transition-all shadow-sm"
+                    >
+                      {submittingQuickAssign ? 'Assigning...' : 'Confirm Assignment'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* View Toggle */}
+              <div className="flex items-center justify-between pt-2 border-t border-light-border/60 dark:border-dark-border/60">
+                <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
+                  <span>Assigned Personnel & Clients</span>
+                  <span className="text-[11px] font-normal text-light-textSecondary">
+                    (Which employee is doing this work for which clients)
+                  </span>
+                </div>
+
+                <div className="inline-flex p-0.5 rounded-lg bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentsViewMode('employeeGrouped')}
+                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                      assignmentsViewMode === 'employeeGrouped'
+                        ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
+                        : 'text-light-textSecondary dark:text-dark-textSecondary'
+                    }`}
+                  >
+                    Group by Employee ({employeeSummaries.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAssignmentsViewMode('allList')}
+                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                      assignmentsViewMode === 'allList'
+                        ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
+                        : 'text-light-textSecondary dark:text-dark-textSecondary'
+                    }`}
+                  >
+                    All Tasks ({workAssignmentsList.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Loading State */}
+              {loadingWorkAssignments ? (
+                <div className="py-12 text-center text-xs text-light-textMuted">
+                  Loading assigned team members...
+                </div>
+              ) : workAssignmentsList.length === 0 ? (
+                <div className="py-12 text-center rounded-xl bg-light-bg/40 dark:bg-dark-cardSecondary/30 border border-dashed border-light-border dark:border-dark-border">
+                  <Users className="w-8 h-8 text-light-textMuted mx-auto mb-2" />
+                  <p className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                    No employees have been assigned this work template yet.
+                  </p>
+                  <p className="text-[11px] text-light-textMuted mt-1">
+                    Click "Assign to Team Member" above to assign it to an employee for a client.
+                  </p>
+                </div>
+              ) : assignmentsViewMode === 'employeeGrouped' ? (
+                /* Grouped by Employee */
+                <div className="space-y-3">
+                  {employeeSummaries.map((es) => (
+                    <div
+                      key={es.employeeId}
+                      className="rounded-xl border border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-cardSecondary/20 overflow-hidden"
+                    >
+                      {/* Employee Header */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-light-bg/60 dark:bg-dark-cardSecondary/40 border-b border-light-border/60 dark:border-dark-border/60 gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs">
+                            {es.employeeName.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-xs text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
+                              <span>{es.employeeName}</span>
+                              <span className="font-mono text-[10px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20">
+                                {es.employeeCode}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-light-textSecondary">
+                              {es.designation} • {es.department}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-semibold text-purple-600 dark:text-purple-300 self-start sm:self-auto">
+                          <Briefcase className="w-3.5 h-3.5 text-purple-500" />
+                          <span>
+                            {es.assignmentsCount} {es.assignmentsCount === 1 ? 'Assignment' : 'Assignments'} ({es.clients.length} {es.clients.length === 1 ? 'Client' : 'Clients'})
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Tasks under this employee */}
+                      <div className="divide-y divide-light-border/40 dark:divide-dark-border/40 text-xs">
+                        {es.assignments.map((a: any) => {
+                          const clientName = a.clientId?.businessName || a.clientId?.name || 'Client';
+                          const pan = a.clientId?.pan || 'N/A';
+
+                          return (
+                            <div
+                              key={a._id}
+                              className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-light-bg/60 dark:hover:bg-dark-cardSecondary/40 transition-colors"
+                            >
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                                    {clientName}
+                                  </span>
+                                  <span className="font-mono text-[10px] text-light-textMuted">
+                                    (PAN: {pan})
+                                  </span>
+                                  <span className="font-mono text-[10px] text-brand-500 font-semibold">
+                                    {a.workCode}
+                                  </span>
+                                </div>
+                                {a.remarks && (
+                                  <p className="text-[11px] text-light-textSecondary italic">
+                                    "{a.remarks}"
+                                  </p>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-3 text-[11px]">
+                                <div className="flex items-center gap-1 text-light-textSecondary">
+                                  <Calendar className="w-3.5 h-3.5 text-light-textMuted" />
+                                  <span>Due: {new Date(a.dueDate).toLocaleDateString()}</span>
+                                </div>
+
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    a.priority === 'Urgent'
+                                      ? 'bg-status-red/10 text-status-red'
+                                      : a.priority === 'High'
+                                      ? 'bg-amber-500/10 text-amber-600'
+                                      : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
+                                  }`}
+                                >
+                                  {a.priority}
+                                </span>
+
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                    ['Completed', 'Filed'].includes(a.status)
+                                      ? 'bg-status-greenLight text-status-green'
+                                      : a.status === 'In Progress'
+                                      ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/20'
+                                      : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10'
+                                  }`}
+                                >
+                                  {a.status}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* Flat All List View */
+                <div className="overflow-x-auto border border-light-border dark:border-dark-border rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[11px] font-semibold text-light-textSecondary">
+                        <th className="py-2.5 px-3">Work Code</th>
+                        <th className="py-2.5 px-3">Assigned Employee</th>
+                        <th className="py-2.5 px-3">Client</th>
+                        <th className="py-2.5 px-3">Due Date</th>
+                        <th className="py-2.5 px-3">Priority</th>
+                        <th className="py-2.5 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
+                      {workAssignmentsList.map((a: any) => (
+                        <tr key={a._id} className="hover:bg-light-bg/40 dark:hover:bg-dark-cardSecondary/40">
+                          <td className="py-2.5 px-3 font-mono text-brand-500 font-semibold">{a.workCode}</td>
+                          <td className="py-2.5 px-3">
+                            <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                              {a.employeeId?.name || 'Employee'}
+                            </div>
+                            <div className="text-[10px] text-light-textMuted font-mono">
+                              {a.employeeId?.employeeCode} • {a.employeeId?.designation}
+                            </div>
+                          </td>
+                          <td className="py-2.5 px-3 text-light-textSecondary">
+                            <div className="font-semibold">{a.clientId?.businessName || a.clientId?.name}</div>
+                            <div className="text-[10px] text-light-textMuted font-mono">{a.clientId?.pan}</div>
+                          </td>
+                          <td className="py-2.5 px-3 text-light-textSecondary">
+                            {new Date(a.dueDate).toLocaleDateString()}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                a.priority === 'Urgent'
+                                  ? 'bg-status-red/10 text-status-red'
+                                  : a.priority === 'High'
+                                  ? 'bg-amber-500/10 text-amber-600'
+                                  : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
+                              }`}
+                            >
+                              {a.priority}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                ['Completed', 'Filed'].includes(a.status)
+                                  ? 'bg-status-greenLight text-status-green'
+                                  : 'bg-amber-50 text-amber-600'
+                              }`}
+                            >
+                              {a.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/30 flex items-center justify-between">
+              <span className="text-[11px] text-light-textSecondary">
+                Total {totalWorkAssignmentsCount} active tasks distributed across {employeeSummaries.length} team members
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsAssignmentsModalOpen(false)}
+                className="px-4 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-xs font-semibold hover:bg-light-border/40 transition-colors"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

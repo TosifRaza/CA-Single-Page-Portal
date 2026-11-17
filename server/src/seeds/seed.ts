@@ -8,7 +8,9 @@ import { Organization } from '../models/Organization.js';
 import { User } from '../models/User.js';
 import { Client } from '../models/Client.js';
 import { Employee } from '../models/Employee.js';
+import { TaxGroup } from '../models/TaxGroup.js';
 import { TaxMaster } from '../models/TaxMaster.js';
+import { DEFAULT_TAX_GROUPS } from '../controllers/taxGroupController.js';
 import { TaxFiling } from '../models/TaxFiling.js';
 import { WorkMaster } from '../models/WorkMaster.js';
 import { WorkAssignment } from '../models/WorkAssignment.js';
@@ -28,6 +30,7 @@ export const seedDatabase = async () => {
       User.deleteMany({}),
       Client.deleteMany({}),
       Employee.deleteMany({}),
+      TaxGroup.deleteMany({}),
       TaxMaster.deleteMany({}),
       TaxFiling.deleteMany({}),
       WorkMaster.deleteMany({}),
@@ -209,6 +212,28 @@ export const seedDatabase = async () => {
       branchId: branchHQ._id,
       status: 'active',
     });
+
+    console.log('[Seeder] Creating Tax Groups...');
+    await TaxGroup.create([
+      {
+        organizationId: org._id,
+        groupName: 'GST',
+        groupCode: 'GST',
+        description: 'Goods and Services Tax',
+        defaultFrequency: 'Monthly',
+        status: 'active',
+        isSystemDefault: true,
+      },
+      {
+        organizationId: org._id,
+        groupName: 'Income Tax',
+        groupCode: 'IT',
+        description: 'Income Tax & Audit',
+        defaultFrequency: 'Yearly',
+        status: 'active',
+        isSystemDefault: true,
+      },
+    ]);
 
     console.log('[Seeder] Creating Tax Masters (only 2 data items)...');
     const taxData = [

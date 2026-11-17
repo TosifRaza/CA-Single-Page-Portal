@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   X,
   Calendar,
@@ -248,7 +249,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   onClose,
   onSuccess,
   editingTax,
-  defaultTaxGroup = 'GST',
+  defaultTaxGroup = '',
 }) => {
   // Dropdown options
   const [clients, setClients] = useState<ClientItem[]>([]);
@@ -259,24 +260,20 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [isDirty, setIsDirty] = useState(false);
 
   // Section A: Basic Tax Information
-  const [taxGroup, setTaxGroup] = useState<string>('GST');
+  const [taxGroup, setTaxGroup] = useState<string>('');
   const [showGroupSelect, setShowGroupSelect] = useState<boolean>(false);
   const [taxName, setTaxName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [frequency, setFrequency] = useState<string>('Monthly');
   const [financialYear, setFinancialYear] = useState<string>('2026-27');
-  const [applicableClientTypes, setApplicableClientTypes] = useState<string[]>([
-    'Individual',
-    'Business',
-    'Company',
-  ]);
+  const [applicableClientTypes, setApplicableClientTypes] = useState<string[]>([]);
   const [status, setStatus] = useState<string>('Active');
 
   // Section B: Timeline & Due Date
-  const [periodFrom, setPeriodFrom] = useState<string>('2026-11-01');
-  const [periodTo, setPeriodTo] = useState<string>('2026-11-30');
-  const [filingPeriod, setFilingPeriod] = useState<string>('Nov 2026');
-  const [originalDueDate, setOriginalDueDate] = useState<string>('2026-12-11');
+  const [periodFrom, setPeriodFrom] = useState<string>('');
+  const [periodTo, setPeriodTo] = useState<string>('');
+  const [filingPeriod, setFilingPeriod] = useState<string>('');
+  const [originalDueDate, setOriginalDueDate] = useState<string>('');
   const [hasExtension, setHasExtension] = useState<boolean>(false);
   const [extendedDueDate, setExtendedDueDate] = useState<string>('');
   const [extensionReason, setExtensionReason] = useState<string>('');
@@ -365,7 +362,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     }
   }, [isOpen]);
 
-  // Handle Tax Group Change - Automatically adjusts Frequency, Client Types & Reconciliation!
+  // Handle Tax Group Change - strictly dynamic from Database Tax Group configuration
   const handleTaxGroupChange = (newGroup: string) => {
     setTaxGroup(newGroup);
     setIsDirty(true);
@@ -376,46 +373,18 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         g.groupName.toLowerCase() === newGroup.toLowerCase() ||
         g.groupCode.toLowerCase() === newGroup.toLowerCase()
     );
-    const cfgKey = getCanonicalGroup(newGroup);
-    const cfg = TAX_GROUP_CONFIG[cfgKey] || TAX_GROUP_CONFIG.Other;
 
-    const defaultFreq = matchedGroup?.defaultFrequency || cfg.defaultFrequency || 'Monthly';
-    const clientTypes =
-      matchedGroup?.applicableClientTypes && matchedGroup.applicableClientTypes.length > 0
-        ? matchedGroup.applicableClientTypes
-        : cfg.defaultClientTypes;
-    const reconTypes =
-      matchedGroup?.reconciliationTypes && matchedGroup.reconciliationTypes.length > 0
-        ? matchedGroup.reconciliationTypes
-        : cfg.reconciliationTypes;
-
-    // 1. Auto-adjust frequency to statutory standard
-    setFrequency(defaultFreq);
-
-    // 2. Auto-adjust applicable client types (e.g. ROC to Company only!)
-    setApplicableClientTypes(clientTypes);
-
-    // 3. Auto-adjust relevant reconciliation types
-    if (reconTypes.length > 0) {
-      setReconciliationType(reconTypes[0]);
-    }
-
-    // 4. Default dates based on frequency
-    if (defaultFreq === 'Yearly') {
-      setPeriodFrom('2026-04-01');
-      setPeriodTo('2027-03-31');
-      setFilingPeriod('FY 2026-27 (AY 2027-28)');
-      setOriginalDueDate('2027-07-31');
-    } else if (defaultFreq === 'Quarterly') {
-      setPeriodFrom('2026-10-01');
-      setPeriodTo('2026-12-31');
-      setFilingPeriod('Q3 (Oct-Dec 2026)');
-      setOriginalDueDate('2027-01-31');
-    } else {
-      setPeriodFrom('2026-11-01');
-      setPeriodTo('2026-11-30');
-      setFilingPeriod('Nov 2026');
-      setOriginalDueDate(cfgKey === 'GST' ? '2026-12-20' : '2026-12-15');
+    if (matchedGroup) {
+      if (matchedGroup.defaultFrequency) setFrequency(matchedGroup.defaultFrequency);
+      if (matchedGroup.applicableClientTypes && matchedGroup.applicableClientTypes.length > 0) {
+        setApplicableClientTypes(matchedGroup.applicableClientTypes);
+      }
+      if (matchedGroup.reconciliationTypes && matchedGroup.reconciliationTypes.length > 0) {
+        setReconciliationType(matchedGroup.reconciliationTypes[0]);
+      }
+      if (matchedGroup.dueDate) {
+        setOriginalDueDate(matchedGroup.dueDate);
+      }
     }
   };
 
@@ -507,7 +476,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setShowGroupSelect(false);
       setIsDirty(false);
     } else {
-      // Clean start
+      // Clean start - no hardcoded values
       const initialGroup = defaultTaxGroup && defaultTaxGroup !== 'All' && defaultTaxGroup !== 'All Taxes' ? defaultTaxGroup : '';
       setTaxGroup(initialGroup);
       setShowGroupSelect(false);
@@ -516,10 +485,11 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setFrequency('Monthly');
       setFinancialYear('2026-27');
       setStatus('Active');
-      setPeriodFrom('2026-11-01');
-      setPeriodTo('2026-11-30');
-      setFilingPeriod('Nov 2026');
-      setOriginalDueDate('2026-12-20');
+      setApplicableClientTypes([]);
+      setPeriodFrom('');
+      setPeriodTo('');
+      setFilingPeriod('');
+      setOriginalDueDate('');
       setHasExtension(false);
       setExtendedDueDate('');
       setExtensionReason('');
@@ -529,6 +499,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setActualSubmissionDate('');
       setAcknowledgementNumber('');
       setReconciliationRequired(false);
+      setReconciliationType('');
       setAmountAsPerBooks(0);
       setAmountAsPerStatement(0);
       setIsDirty(false);
@@ -766,22 +737,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 >
                   <option value="">-- Select a Tax Group --</option>
                   {availableTaxGroups && availableTaxGroups.length > 0 ? (
-                    availableTaxGroups.map((g) => {
-                      const canonical = g.groupCode === 'GST' ? 'GST'
-                        : g.groupCode === 'IT' ? 'Income Tax'
-                        : g.groupCode === 'TDS' ? 'TDS'
-                        : g.groupCode === 'TCS' ? 'TCS'
-                        : g.groupCode === 'ROC' ? 'ROC'
-                        : g.groupCode === 'PF_ESI' ? 'PF / ESI'
-                        : g.groupName;
-                      return (
-                        <option key={g._id || g.groupName} value={canonical}>
-                          {g.groupName} ({g.groupCode})
-                        </option>
-                      );
-                    })
+                    availableTaxGroups.map((g) => (
+                      <option key={g._id || g.groupName} value={g.groupName}>
+                        {g.groupName} {g.groupCode ? `(${g.groupCode})` : ''}
+                      </option>
+                    ))
                   ) : (
-                    <option value="" disabled>No Tax Groups available (Database is empty)</option>
+                    <option value="" disabled>No Tax Groups available (Create in Tax Group Master first)</option>
                   )}
                 </select>
               </div>
@@ -794,13 +756,24 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 <Layers className="w-6 h-6" />
               </div>
               <h4 className="text-sm font-bold text-light-textPrimary dark:text-dark-textPrimary">
-                {availableTaxGroups.length === 0 ? 'No Tax Groups in Database' : 'First, Select a Tax Group'}
+                {availableTaxGroups.length === 0 ? 'Tax Group Master is Empty' : 'First, Select a Tax Group'}
               </h4>
               <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-1 max-w-sm mx-auto">
                 {availableTaxGroups.length === 0
-                  ? 'All Tax Groups have been deleted from the database. Please add a Tax Group first from the Tax Group Master page.'
+                  ? 'Tax Master strictly depends on Tax Group Master. There are 0 Tax Groups currently configured. You cannot add a Tax until at least one Tax Group is created.'
                   : 'Every tax master must be under a tax group. Select a tax group above to enter tax name and configure statutory details.'}
               </p>
+              {availableTaxGroups.length === 0 && (
+                <div className="mt-4">
+                  <NavLink
+                    to="/masters/tax-groups"
+                    onClick={onClose}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md shadow-brand-500/20 active:scale-95 transition-all"
+                  >
+                    <span>+ Go to Tax Group Master</span>
+                  </NavLink>
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -1584,7 +1557,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             <button
               type="submit"
               form="taxRuleForm"
-              disabled={submitting || !taxGroup}
+              disabled={submitting || !taxGroup || availableTaxGroups.length === 0}
               className="px-6 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all disabled:opacity-50"
             >
               {submitting ? 'Saving...' : editingTax ? 'Update Tax Rule' : 'Save Tax'}

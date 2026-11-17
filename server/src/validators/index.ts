@@ -215,6 +215,13 @@ export const employeeSchema = z.object({
   managerId: z.string().optional(),
   permissions: z.array(z.string()).optional(),
   status: z.enum(['active', 'inactive', 'archived']).default('active'),
+  initialAssignments: z.array(z.object({
+    clientId: z.string(),
+    workMasterId: z.string(),
+    dueDate: z.string().optional(),
+    priority: z.enum(['Low', 'Medium', 'High', 'Urgent']).optional(),
+    remarks: z.string().optional(),
+  })).optional(),
 });
 
 export const paymentSchema = z.object({

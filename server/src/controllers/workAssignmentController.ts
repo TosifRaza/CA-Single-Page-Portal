@@ -3,6 +3,7 @@ import { WorkAssignment } from '../models/WorkAssignment.js';
 import { WorkMaster } from '../models/WorkMaster.js';
 import { Client } from '../models/Client.js';
 import { Employee } from '../models/Employee.js';
+import { TaxMaster } from '../models/TaxMaster.js';
 import { ActivityLog, Notification } from '../models/Operations.js';
 import { workAssignmentSchema } from '../validators/index.js';
 
@@ -93,6 +94,21 @@ export const getWorkAssignmentById = async (req: Request, res: Response, next: N
 export const createWorkAssignment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.user!.organizationId;
+
+    // Flow Rule 2: Cannot create work assignment if no active taxes exist in Tax Master
+    const taxMasterCount = await TaxMaster.countDocuments({
+      organizationId,
+      status: { $ne: 'Archived' },
+    });
+
+    if (taxMasterCount === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot create work assignment. Flow requires active taxes in Tax Master & Compliance first.',
+      });
+      return;
+    }
+
     const validated = workAssignmentSchema.parse(req.body);
 
     const client = await Client.findOne({ _id: validated.clientId, organizationId });

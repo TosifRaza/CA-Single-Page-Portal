@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { UserPlus, Briefcase, Layers, BarChart3 } from 'lucide-react';
+import { UserPlus, Briefcase, Layers, FileCheck } from 'lucide-react';
 
 export const QuickActions: React.FC = () => {
   const navigate = useNavigate();
@@ -25,10 +25,10 @@ export const QuickActions: React.FC = () => {
       route: '/masters/tax',
     },
     {
-      title: 'View Reports',
-      icon: BarChart3,
+      title: 'Work Master',
+      icon: FileCheck,
       color: 'text-status-orange bg-status-orange/10 dark:bg-status-orange/15',
-      route: '/reports',
+      route: '/masters/work',
     },
   ];
 

@@ -19,37 +19,28 @@ export const DashboardPage: React.FC = () => {
 
   const [stats, setStats] = useState<any>({
     kpi: {
-      totalClients: { value: 248, changePercent: 18, trend: 'up' },
-      pendingWorks: { value: 86, changePercent: 0, trend: 'stable' },
-      completedFilings: { value: 602, changePercent: 15, trend: 'up' },
-      upcomingDeadlines: { value: 24, changePercent: -5, trend: 'down' },
+      totalClients: { value: 0, changePercent: 0, trend: 'stable' },
+      pendingWorks: { value: 0, changePercent: 0, trend: 'stable' },
+      completedFilings: { value: 0, changePercent: 0, trend: 'stable' },
+      upcomingDeadlines: { value: 0, changePercent: 0, trend: 'stable' },
     },
     compliance: {
-      rate: 92,
-      label: 'On Track',
-      completedPercent: 92,
-      pendingPercent: 6,
-      overduePercent: 2,
+      rate: 0,
+      label: 'No Data',
+      completedPercent: 0,
+      pendingPercent: 0,
+      overduePercent: 0,
     },
-    upcomingDeadlines: [
-      { id: '1', taxWork: 'GSTR-1 (GST)', client: 'ABC Traders', dueDate: '11 Nov 2026', status: 'Upcoming' },
-      { id: '2', taxWork: 'TDS Return', client: 'XYZ Pvt Ltd', dueDate: '15 Nov 2026', status: 'Upcoming' },
-      { id: '3', taxWork: 'ITR Filing', client: 'Global Solutions', dueDate: '31 Dec 2026', status: 'Upcoming' },
-      { id: '4', taxWork: 'GSTR-3B (GST)', client: 'Sunrise Infotech', dueDate: '20 Nov 2026', status: 'Upcoming' },
-    ],
-    recentActivities: [
-      { id: '1', action: 'GSTR-1 filed for ABC Traders', createdAt: '2 hours ago', color: 'green', icon: 'check' },
-      { id: '2', action: 'New client registered: XYZ Pvt Ltd', createdAt: '3 hours ago', color: 'blue', icon: 'user' },
-      { id: '3', action: 'Payment received from Global Solutions', createdAt: '5 hours ago', color: 'orange', icon: 'payment' },
-    ],
+    upcomingDeadlines: [],
+    recentActivities: [],
     taxCompliance: {
-      pendingFilings: 3,
-      completedFilings: 3,
-      upcomingDeadlines: 24,
+      pendingFilings: 0,
+      completedFilings: 0,
+      upcomingDeadlines: 0,
       overdueFilings: 0,
-      extendedDeadlines: 2,
-      pendingReconciliations: 2,
-      reconciliationMismatches: 1,
+      extendedDeadlines: 0,
+      pendingReconciliations: 0,
+      reconciliationMismatches: 0,
     },
   });
 
@@ -132,16 +123,16 @@ export const DashboardPage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
         <StatCard
           title="Total Clients"
-          value={stats.kpi?.totalClients?.value ?? 248}
-          changePercent={stats.kpi?.totalClients?.changePercent ?? 18}
-          trend={stats.kpi?.totalClients?.trend ?? 'up'}
+          value={stats.kpi?.totalClients?.value ?? 0}
+          changePercent={stats.kpi?.totalClients?.changePercent ?? 0}
+          trend={stats.kpi?.totalClients?.trend ?? 'stable'}
           color="blue"
           sparklineData={stats.kpi?.totalClients?.sparkline}
         />
 
         <StatCard
           title="Pending Works"
-          value={stats.kpi?.pendingWorks?.value ?? 86}
+          value={stats.kpi?.pendingWorks?.value ?? 0}
           changePercent={stats.kpi?.pendingWorks?.changePercent ?? 0}
           trend={stats.kpi?.pendingWorks?.trend ?? 'stable'}
           color="green"
@@ -150,18 +141,18 @@ export const DashboardPage: React.FC = () => {
 
         <StatCard
           title="Completed Filings"
-          value={stats.kpi?.completedFilings?.value ?? 602}
-          changePercent={stats.kpi?.completedFilings?.changePercent ?? 15}
-          trend={stats.kpi?.completedFilings?.trend ?? 'up'}
+          value={stats.kpi?.completedFilings?.value ?? 0}
+          changePercent={stats.kpi?.completedFilings?.changePercent ?? 0}
+          trend={stats.kpi?.completedFilings?.trend ?? 'stable'}
           color="purple"
           sparklineData={stats.kpi?.completedFilings?.sparkline}
         />
 
         <StatCard
           title="Upcoming Deadlines"
-          value={stats.kpi?.upcomingDeadlines?.value ?? 24}
-          changePercent={stats.kpi?.upcomingDeadlines?.changePercent ?? -5}
-          trend={stats.kpi?.upcomingDeadlines?.trend ?? 'down'}
+          value={stats.kpi?.upcomingDeadlines?.value ?? 0}
+          changePercent={stats.kpi?.upcomingDeadlines?.changePercent ?? 0}
+          trend={stats.kpi?.upcomingDeadlines?.trend ?? 'stable'}
           color="orange"
           sparklineData={stats.kpi?.upcomingDeadlines?.sparkline}
         />
@@ -191,7 +182,7 @@ export const DashboardPage: React.FC = () => {
               Pending Filings
             </span>
             <span className="text-base font-extrabold text-light-textPrimary dark:text-dark-textPrimary">
-              {stats.taxCompliance?.pendingFilings ?? 3}
+              {stats.taxCompliance?.pendingFilings ?? 0}
             </span>
           </div>
 
@@ -200,7 +191,7 @@ export const DashboardPage: React.FC = () => {
               Completed Filings
             </span>
             <span className="text-base font-extrabold text-status-green">
-              {stats.taxCompliance?.completedFilings ?? 3}
+              {stats.taxCompliance?.completedFilings ?? 0}
             </span>
           </div>
 
@@ -209,7 +200,7 @@ export const DashboardPage: React.FC = () => {
               Upcoming Deadlines
             </span>
             <span className="text-base font-extrabold text-brand-500">
-              {stats.taxCompliance?.upcomingDeadlines ?? 24}
+              {stats.taxCompliance?.upcomingDeadlines ?? 0}
             </span>
           </div>
 
@@ -227,7 +218,7 @@ export const DashboardPage: React.FC = () => {
               Extended Deadlines
             </span>
             <span className="text-base font-extrabold text-status-orange">
-              {stats.taxCompliance?.extendedDeadlines ?? 2}
+              {stats.taxCompliance?.extendedDeadlines ?? 0}
             </span>
           </div>
 
@@ -236,7 +227,7 @@ export const DashboardPage: React.FC = () => {
               Pending Recons
             </span>
             <span className="text-base font-extrabold text-status-purple">
-              {stats.taxCompliance?.pendingReconciliations ?? 2}
+              {stats.taxCompliance?.pendingReconciliations ?? 0}
             </span>
           </div>
 
@@ -245,7 +236,7 @@ export const DashboardPage: React.FC = () => {
               Recon Mismatches
             </span>
             <span className="text-base font-extrabold text-status-red">
-              {stats.taxCompliance?.reconciliationMismatches ?? 1}
+              {stats.taxCompliance?.reconciliationMismatches ?? 0}
             </span>
           </div>
         </div>

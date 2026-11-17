@@ -9,6 +9,7 @@ import {
   XCircle,
   X,
   Calendar,
+  Receipt,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -221,6 +222,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                 <th className="py-3 px-4 w-14">#</th>
                 <th className="py-3 px-4">Tax Group Name</th>
                 <th className="py-3 px-4">Group Code</th>
+                <th className="py-3 px-4">Linked Taxes</th>
                 <th className="py-3 px-4">Due Date</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -229,13 +231,13 @@ export const TaxGroupMasterPage: React.FC = () => {
             <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={7} className="py-12 text-center text-light-textMuted font-medium">
                     Loading tax groups...
                   </td>
                 </tr>
               ) : taxGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={7} className="py-12 text-center text-light-textMuted font-medium">
                     No tax groups found. Click "+ Add Tax Group" to create one.
                   </td>
                 </tr>
@@ -255,6 +257,22 @@ export const TaxGroupMasterPage: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-[11px]">
                         {g.groupCode}
                       </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {(g.linkedTaxesCount ?? 0) > 0 ? (
+                        <NavLink
+                          to="/masters/tax"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer"
+                          title="View taxes under this group in Tax Master"
+                        >
+                          <Receipt className="w-3.5 h-3.5 text-brand-500" />
+                          <span>
+                            {g.linkedTaxesCount} {g.linkedTaxesCount === 1 ? 'Tax' : 'Taxes'}
+                          </span>
+                        </NavLink>
+                      ) : (
+                        <span className="text-[11px] text-light-textMuted italic">0 Taxes</span>
+                      )}
                     </td>
                     <td className="py-3.5 px-4 text-light-textSecondary dark:text-dark-textSecondary">
                       {g.dueDate ? (

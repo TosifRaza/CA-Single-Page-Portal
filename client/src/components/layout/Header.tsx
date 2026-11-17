@@ -35,7 +35,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   // Notification state
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [unreadCount, setUnreadCount] = useState(3);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -48,34 +48,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
         setUnreadCount(res.data.data.unreadCount ?? 0);
       }
     } catch (e) {
-      // Fallback sample notifications matching screenshot
-      setNotifications([
-        {
-          _id: '1',
-          type: 'alert',
-          title: 'Approaching Due Date',
-          message: 'GSTR-1 for ABC Traders is due on 11 Nov 2026.',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          _id: '2',
-          type: 'info',
-          title: 'New Client Registered',
-          message: 'XYZ Pvt Ltd was onboarded by Tosif Raza.',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        },
-        {
-          _id: '3',
-          type: 'success',
-          title: 'Payment Received',
-          message: 'Received ₹15,000 from Global Solutions.',
-          isRead: false,
-          createdAt: new Date().toISOString(),
-        },
-      ]);
-      setUnreadCount(3);
+      setNotifications([]);
+      setUnreadCount(0);
     }
   };
 

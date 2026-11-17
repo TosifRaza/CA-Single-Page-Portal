@@ -37,6 +37,7 @@ export interface TaxGroupItem {
   isSystemDefault: boolean;
   createdAt: string;
   updatedAt?: string;
+  linkedTaxesCount?: number;
 }
 
 export interface TaxMasterItem {
@@ -137,6 +138,17 @@ export interface WorkMasterItem {
   defaultDocuments?: string[];
   status: 'Active' | 'Inactive' | 'Archived';
   createdAt: string;
+  totalAssignmentsCount?: number;
+  assignedClientsCount?: number;
+  assignedEmployeesCount?: number;
+  assignedEmployees?: Array<{
+    employeeId: string;
+    employeeName: string;
+    employeeCode: string;
+    designation?: string;
+    count: number;
+    clientsCount: number;
+  }>;
 }
 
 export interface ClientItem {
@@ -183,6 +195,10 @@ export interface EmployeeItem {
   branchId?: any;
   status: 'active' | 'inactive' | 'archived';
   createdAt: string;
+  assignedWorksCount?: number;
+  assignedClientsCount?: number;
+  pendingWorksCount?: number;
+  completedWorksCount?: number;
 }
 
 export interface WorkAssignmentItem {

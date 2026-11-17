@@ -1,5 +1,10 @@
 import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 import { TaxGroup } from '../models/TaxGroup.js';
+import { TaxMaster } from '../models/TaxMaster.js';
+import { WorkMaster } from '../models/WorkMaster.js';
+import { WorkAssignment } from '../models/WorkAssignment.js';
+import { TaxFiling } from '../models/TaxFiling.js';
 import { taxGroupSchema } from '../validators/index.js';
 
 export const DEFAULT_TAX_GROUPS = [
@@ -107,9 +112,47 @@ export const getTaxGroups = async (req: Request, res: Response, next: NextFuncti
 
     let groups = await TaxGroup.find(query).sort({ isSystemDefault: -1, createdAt: 1 });
 
+    // Aggregate linked taxes count from TaxMaster
+    const orgObjId = new mongoose.Types.ObjectId(organizationId);
+    const taxCounts = await TaxMaster.aggregate([
+      {
+        $match: {
+          organizationId: orgObjId,
+          status: { $ne: 'Archived' },
+        },
+      },
+      {
+        $group: {
+          _id: '$taxGroup',
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const countMap = new Map<string, number>();
+    taxCounts.forEach((tc) => {
+      if (tc._id) {
+        countMap.set(tc._id.toString().trim().toUpperCase(), tc.count);
+      }
+    });
+
+    const groupsWithCounts = groups.map((g) => {
+      const gObj = g.toObject();
+      const codeCount = countMap.get(g.groupCode.trim().toUpperCase()) || 0;
+      const nameCount = countMap.get(g.groupName.trim().toUpperCase()) || 0;
+      let count = codeCount || nameCount;
+      if (g.groupCode === 'IT') {
+        count = count || (countMap.get('INCOME TAX') || 0);
+      }
+      return {
+        ...gObj,
+        linkedTaxesCount: count,
+      };
+    });
+
     res.json({
       success: true,
-      data: groups,
+      data: groupsWithCounts,
     });
   } catch (error) {
     next(error);
@@ -200,11 +243,33 @@ export const deleteTaxGroup = async (req: Request, res: Response, next: NextFunc
       return;
     }
 
+    // Cascade delete: Find all linked taxes in TaxMaster
+    const linkedTaxes = await TaxMaster.find({
+      organizationId,
+      $or: [
+        { taxGroup: group.groupName },
+        { taxGroup: group.groupCode },
+      ],
+    });
+
+    const taxIds = linkedTaxes.map((t) => t._id);
+
+    if (taxIds.length > 0) {
+      // 1. Delete dependent Work Masters
+      await WorkMaster.deleteMany({ organizationId, taxId: { $in: taxIds } });
+      // 2. Delete dependent Work Assignments
+      await WorkAssignment.deleteMany({ organizationId, taxId: { $in: taxIds } });
+      // 3. Delete dependent Tax Filings
+      await TaxFiling.deleteMany({ organizationId, taxRuleId: { $in: taxIds } });
+      // 4. Delete the Tax Rules themselves
+      await TaxMaster.deleteMany({ organizationId, _id: { $in: taxIds } });
+    }
+
     await TaxGroup.deleteOne({ _id: id, organizationId });
 
     res.json({
       success: true,
-      message: 'Tax Group deleted successfully',
+      message: `Tax Group '${group.groupName}' deleted successfully along with dependent compliance taxes.`,
     });
   } catch (error) {
     next(error);

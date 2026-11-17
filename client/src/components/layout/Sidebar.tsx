@@ -183,58 +183,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   <ClipboardList className="w-4 h-4" />
                   <span>Work Assignment</span>
                 </NavLink>
-
-                <NavLink
-                  to="/masters/documents"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/masters/documents')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <FolderLock className="w-4 h-4" />
-                  <span>Document Master</span>
-                </NavLink>
-
-                <NavLink
-                  to="/masters/financial-years"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/masters/financial-years')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <Calendar className="w-4 h-4" />
-                  <span>Financial Year</span>
-                </NavLink>
-
-                <NavLink
-                  to="/masters/branches"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/masters/branches')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <Building2 className="w-4 h-4" />
-                  <span>Branch Master</span>
-                </NavLink>
-
-                <NavLink
-                  to="/masters/services"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/masters/services')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <Layers className="w-4 h-4" />
-                  <span>Service Master</span>
-                </NavLink>
               </div>
             )}
           </div>
@@ -279,77 +227,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 >
                   <FileCheck2 className="w-4 h-4" />
                   <span>Works & Filings</span>
-                </NavLink>
-
-                <NavLink
-                  to="/payments"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/payments')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Payments</span>
-                </NavLink>
-
-                <NavLink
-                  to="/reports"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/reports')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <BarChart3 className="w-4 h-4" />
-                  <span>Reports</span>
-                </NavLink>
-              </div>
-            )}
-          </div>
-
-          {/* Settings Group */}
-          <div>
-            <button
-              onClick={() => setSettingsOpen(!settingsOpen)}
-              className="flex items-center justify-between w-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary"
-            >
-              <span>Settings</span>
-              {settingsOpen ? (
-                <ChevronDown className="w-3.5 h-3.5" />
-              ) : (
-                <ChevronRight className="w-3.5 h-3.5" />
-              )}
-            </button>
-
-            {settingsOpen && (
-              <div className="mt-1 space-y-0.5">
-                <NavLink
-                  to="/settings/general"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/settings/general')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <Settings className="w-4 h-4" />
-                  <span>General Settings</span>
-                </NavLink>
-
-                <NavLink
-                  to="/settings/users"
-                  onClick={onClose}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
-                    isActive('/settings/users')
-                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
-                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                  }`}
-                >
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Users & Roles</span>
                 </NavLink>
               </div>
             )}

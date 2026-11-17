@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { TaxMaster } from '../models/TaxMaster.js';
+import { TaxGroup } from '../models/TaxGroup.js';
 import { ActivityLog } from '../models/Operations.js';
 import { taxMasterSchema } from '../validators/index.js';
 
@@ -55,7 +56,40 @@ export const getTaxes = async (req: Request, res: Response, next: NextFunction):
 export const createTax = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.user!.organizationId;
+
+    // Rule 1: Tax Master strictly depends on Tax Group Master
+    const taxGroupCount = await TaxGroup.countDocuments({
+      organizationId,
+      status: { $ne: 'inactive' },
+    });
+
+    if (taxGroupCount === 0) {
+      res.status(400).json({
+        success: false,
+        message: 'Cannot create Tax. Tax Master strictly depends on Tax Group Master. Please create at least one Tax Group in Tax Group Master first.',
+      });
+      return;
+    }
+
     const validated = taxMasterSchema.parse(req.body);
+
+    // Verify taxGroup exists in Tax Group Master
+    const groupExists = await TaxGroup.findOne({
+      organizationId,
+      $or: [
+        { groupName: { $regex: `^${validated.taxGroup}$`, $options: 'i' } },
+        { groupCode: { $regex: `^${validated.taxGroup}$`, $options: 'i' } },
+      ],
+      status: { $ne: 'inactive' },
+    });
+
+    if (!groupExists) {
+      res.status(400).json({
+        success: false,
+        message: `Tax Group '${validated.taxGroup}' does not exist in Tax Group Master. Please select an active configured Tax Group.`,
+      });
+      return;
+    }
 
     // Auto-generate next taxId
     const last = await TaxMaster.findOne({ organizationId }).sort({ taxId: -1 });
@@ -63,6 +97,7 @@ export const createTax = async (req: Request, res: Response, next: NextFunction)
 
     const tax = await TaxMaster.create({
       ...validated,
+      taxGroup: groupExists.groupName, // Store canonical group name
       taxId: nextId,
       organizationId,
     });

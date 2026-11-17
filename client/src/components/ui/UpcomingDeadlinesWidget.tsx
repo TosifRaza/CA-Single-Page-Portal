@@ -16,19 +16,16 @@ interface UpcomingDeadlinesWidgetProps {
 }
 
 export const UpcomingDeadlinesWidget: React.FC<UpcomingDeadlinesWidgetProps> = ({
-  deadlines = [
-    { id: '1', taxWork: 'GSTR-1 (GST)', client: 'ABC Traders', dueDate: '11 Nov 2026', status: 'Upcoming' },
-    { id: '2', taxWork: 'TDS Return', client: 'XYZ Pvt Ltd', dueDate: '15 Nov 2026', status: 'Upcoming' },
-    { id: '3', taxWork: 'ITR Filing', client: 'Global Solutions', dueDate: '31 Dec 2026', status: 'Upcoming' },
-    { id: '4', taxWork: 'GSTR-3B (GST)', client: 'Sunrise Infotech', dueDate: '20 Nov 2026', status: 'Upcoming' },
-  ],
+  deadlines = [],
 }) => {
   const formatDate = (d: string | Date) => {
-    if (typeof d === 'string' && d.includes('Nov') || typeof d === 'string' && d.includes('Dec')) {
+    if (typeof d === 'string' && (d.includes('Nov') || d.includes('Dec'))) {
       return d;
     }
     const dateObj = new Date(d);
-    return dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    return isNaN(dateObj.getTime())
+      ? String(d)
+      : dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   };
 
   return (
@@ -47,50 +44,56 @@ export const UpcomingDeadlinesWidget: React.FC<UpcomingDeadlinesWidgetProps> = (
         </NavLink>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-xs">
-          <thead>
-            <tr className="border-b border-light-border/70 dark:border-dark-border/70 text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
-              <th className="pb-2.5 font-medium">Tax / Work</th>
-              <th className="pb-2.5 font-medium">Client</th>
-              <th className="pb-2.5 font-medium">Due Date</th>
-              <th className="pb-2.5 font-medium text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-light-border/40 dark:divide-dark-border/40 font-medium">
-            {deadlines.map((item) => (
-              <tr
-                key={item.id}
-                className="hover:bg-light-bg/60 dark:hover:bg-dark-cardSecondary/60 transition-colors"
-              >
-                <td className="py-2.5 pr-2 font-semibold text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
-                  {item.taxWork}
-                </td>
-                <td className="py-2.5 pr-2 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
-                  {item.client}
-                </td>
-                <td className="py-2.5 pr-2 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
-                  {formatDate(item.dueDate)}
-                </td>
-                <td className="py-2.5 text-right whitespace-nowrap">
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
-                      item.status === 'Completed'
-                        ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
-                        : item.status === 'Overdue'
-                        ? 'bg-status-redLight dark:bg-status-red/20 text-status-red'
-                        : 'bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400'
-                    }`}
-                  >
-                    {item.status}
-                  </span>
-                </td>
+      {/* Table or Empty State */}
+      {deadlines.length === 0 ? (
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-xs text-light-textMuted dark:text-dark-textMuted">
+          <p>No upcoming deadlines scheduled.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-light-border/70 dark:border-dark-border/70 text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
+                <th className="pb-2.5 font-medium">Tax / Work</th>
+                <th className="pb-2.5 font-medium">Client</th>
+                <th className="pb-2.5 font-medium">Due Date</th>
+                <th className="pb-2.5 font-medium text-right">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="divide-y divide-light-border/40 dark:divide-dark-border/40 font-medium">
+              {deadlines.map((item) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-light-bg/60 dark:hover:bg-dark-cardSecondary/60 transition-colors"
+                >
+                  <td className="py-2.5 pr-2 font-semibold text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
+                    {item.taxWork}
+                  </td>
+                  <td className="py-2.5 pr-2 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
+                    {item.client}
+                  </td>
+                  <td className="py-2.5 pr-2 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
+                    {formatDate(item.dueDate)}
+                  </td>
+                  <td className="py-2.5 text-right whitespace-nowrap">
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        item.status === 'Completed'
+                          ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
+                          : item.status === 'Overdue'
+                          ? 'bg-status-redLight dark:bg-status-red/20 text-status-red'
+                          : 'bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400'
+                      }`}
+                    >
+                      {item.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };

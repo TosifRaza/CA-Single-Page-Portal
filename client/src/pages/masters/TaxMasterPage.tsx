@@ -59,17 +59,28 @@ export const TaxMasterPage: React.FC = () => {
   const [selectedFilingForRecon, setSelectedFilingForRecon] = useState<TaxFilingItem | null>(null);
 
   const [dynamicTaxGroups, setDynamicTaxGroups] = useState<string[]>([]);
+  const [loadingTaxGroups, setLoadingTaxGroups] = useState(true);
+
+  const fetchTaxGroups = async () => {
+    try {
+      setLoadingTaxGroups(true);
+      const res = await api.get('/tax-groups');
+      if (res.data?.data && Array.isArray(res.data.data)) {
+        const names = res.data.data.map((g: any) => g.groupName);
+        setDynamicTaxGroups(names);
+      } else {
+        setDynamicTaxGroups([]);
+      }
+    } catch (err) {
+      console.log('Error fetching tax groups for filter:', err);
+      setDynamicTaxGroups([]);
+    } finally {
+      setLoadingTaxGroups(false);
+    }
+  };
 
   useEffect(() => {
-    api
-      .get('/tax-groups')
-      .then((res) => {
-        if (res.data?.data && Array.isArray(res.data.data)) {
-          const names = res.data.data.map((g: any) => g.groupName);
-          setDynamicTaxGroups(names);
-        }
-      })
-      .catch((err) => console.log('Error fetching tax groups for filter:', err));
+    fetchTaxGroups();
   }, []);
 
   // Only show groups that exist in Tax Group Master
@@ -263,14 +274,51 @@ export const TaxMasterPage: React.FC = () => {
           </NavLink>
 
           <button
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all"
+            onClick={() => {
+              if (dynamicTaxGroups.length === 0) {
+                toast.error('Cannot add tax rule: Tax Group Master is empty. Please configure a Tax Group first.');
+                return;
+              }
+              openCreateModal();
+            }}
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold shadow-md transition-all ${
+              dynamicTaxGroups.length === 0
+                ? 'bg-gray-400 dark:bg-gray-700 text-gray-200 cursor-not-allowed opacity-75'
+                : 'bg-brand-500 hover:bg-brand-600 text-white shadow-brand-500/20 active:scale-95'
+            }`}
+            title={dynamicTaxGroups.length === 0 ? 'Tax Group Master is empty. Please add a Tax Group first.' : 'Add New Tax'}
           >
             <Plus className="w-4 h-4" />
             <span>Add New Tax</span>
           </button>
         </div>
       </div>
+
+      {/* Dependency Warning Banner when 0 Tax Groups configured */}
+      {dynamicTaxGroups.length === 0 && !loadingTaxGroups && (
+        <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-in fade-in">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 shrink-0">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+                Dependency Notice: Tax Master strictly depends on Tax Group Master
+              </h4>
+              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                Currently 0 Tax Groups are configured. You cannot add any Tax Rules until at least one Tax Group is created in Tax Group Master.
+              </p>
+            </div>
+          </div>
+          <NavLink
+            to="/masters/tax-groups"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 self-start sm:self-auto transition-all shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Go to Tax Group Master</span>
+          </NavLink>
+        </div>
+      )}
 
       {/* VIEW 1: TAX RULES (MASTER CONFIGURATION) matching Screenshot */}
       {mainView === 'rules' && (
