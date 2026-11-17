@@ -87,7 +87,7 @@ export const UsersRolesPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4">User</th>
                 <th className="py-3 px-4">Email</th>
                 <th className="py-3 px-4">Role</th>
@@ -107,12 +107,12 @@ export const UsersRolesPage: React.FC = () => {
                     {u.email}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
+                    <span className="px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
                       {u.role}
                     </span>
                   </td>
                   <td className="py-3 px-4">
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-status-greenLight text-status-green">
+                    <span className="px-2 py-0.5 rounded-full text-[12px] font-semibold bg-status-greenLight text-status-green">
                       {u.status}
                     </span>
                   </td>

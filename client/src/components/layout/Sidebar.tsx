@@ -63,17 +63,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
             <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-status-green rounded-full border-2 border-white dark:border-dark-sidebar" />
           </div>
           <div className="flex flex-col">
-            <span className="font-bold text-[17px] tracking-tight text-light-textPrimary dark:text-dark-textPrimary leading-tight">
+            <span className="font-bold text-[19px] tracking-tight text-light-textPrimary dark:text-dark-textPrimary leading-tight">
               CA ProFlow
             </span>
-            <span className="text-[11px] font-medium text-light-textSecondary dark:text-dark-textSecondary tracking-wide">
+            <span className="text-[13px] font-medium text-light-textSecondary dark:text-dark-textSecondary tracking-wide">
               Simplifying Compliance
             </span>
           </div>
         </div>
 
         {/* Scrollable Navigation List */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 text-[13px] font-medium">
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-4 text-[15px] font-medium">
           {/* Dashboard Item */}
           <div>
             <NavLink
@@ -94,9 +94,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div>
             <button
               onClick={() => setMastersOpen(!mastersOpen)}
-              className="flex items-center justify-between w-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary"
+              className="flex items-center justify-between w-full px-2 py-1 text-[13px] font-semibold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary"
             >
-              <span>Master Management</span>
+              <span className="whitespace-nowrap tracking-normal">Master Management</span>
               {mastersOpen ? (
                 <ChevronDown className="w-3.5 h-3.5" />
               ) : (
@@ -191,7 +191,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
           <div>
             <button
               onClick={() => setOperationsOpen(!operationsOpen)}
-              className="flex items-center justify-between w-full px-2 py-1 text-[11px] font-semibold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary"
+              className="flex items-center justify-between w-full px-2 py-1 text-[13px] font-semibold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted hover:text-light-textPrimary dark:hover:text-dark-textPrimary"
             >
               <span>Operations</span>
               {operationsOpen ? (
@@ -246,10 +246,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 className="w-9 h-9 rounded-full object-cover ring-2 ring-brand-500/30"
               />
               <div className="flex flex-col min-w-0">
-                <span className="text-[13px] font-semibold text-light-textPrimary dark:text-dark-textPrimary truncate">
+                <span className="text-[15px] font-semibold text-light-textPrimary dark:text-dark-textPrimary truncate">
                   {user?.name || 'Tosif Raza'}
                 </span>
-                <span className="text-[11px] font-medium text-light-textSecondary dark:text-dark-textSecondary truncate">
+                <span className="text-[13px] font-medium text-light-textSecondary dark:text-dark-textSecondary truncate">
                   {user?.role || 'CA Admin'}
                 </span>
               </div>

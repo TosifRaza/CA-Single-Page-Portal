@@ -99,7 +99,7 @@ export const FinancialYearPage: React.FC = () => {
                 </span>
               </div>
               {y.isCurrent ? (
-                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-brand-500 text-white">
+                <span className="px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-brand-500 text-white">
                   Active Year
                 </span>
               ) : (

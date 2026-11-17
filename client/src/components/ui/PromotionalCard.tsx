@@ -30,7 +30,7 @@ export const PromotionalCard: React.FC = () => {
 
       {/* Content */}
       <div className="relative z-10 max-w-[240px]">
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 dark:bg-blue-500/20 text-white text-[11px] font-semibold mb-3 backdrop-blur-md">
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/15 dark:bg-blue-500/20 text-white text-[13px] font-semibold mb-3 backdrop-blur-md">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>CA Practice Suite</span>
         </div>

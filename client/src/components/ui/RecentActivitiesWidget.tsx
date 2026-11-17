@@ -81,7 +81,7 @@ export const RecentActivitiesWidget: React.FC<RecentActivitiesWidgetProps> = ({
                   {act.action}
                 </span>
               </div>
-              <span className="text-[11px] font-medium text-light-textMuted dark:text-dark-textMuted flex-shrink-0 flex items-center gap-1">
+              <span className="text-[13px] font-medium text-light-textMuted dark:text-dark-textMuted flex-shrink-0 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
                 <span>{formatTime(act.createdAt)}</span>
               </span>

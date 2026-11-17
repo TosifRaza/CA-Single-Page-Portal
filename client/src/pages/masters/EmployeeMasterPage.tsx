@@ -358,7 +358,7 @@ export const EmployeeMasterPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4">Code</th>
                 <th className="py-3 px-4">Employee Name</th>
                 <th className="py-3 px-4">Designation</th>
@@ -406,7 +406,7 @@ export const EmployeeMasterPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary">
                         <div>{emp.email}</div>
-                        <div className="text-[10px] text-light-textMuted dark:text-dark-textMuted font-mono">
+                        <div className="text-[12px] text-light-textMuted dark:text-dark-textMuted font-mono">
                           {emp.mobile}
                         </div>
                       </td>
@@ -416,14 +416,14 @@ export const EmployeeMasterPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleOpenAssignedWorks(emp)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer group"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer group"
                             title="Click to view client work breakdown"
                           >
                             <Briefcase className="w-3.5 h-3.5 text-brand-500" />
                             <span>
                               {worksCount} {worksCount === 1 ? 'Work' : 'Works'}
                             </span>
-                            <span className="text-[10px] opacity-75 font-normal">
+                            <span className="text-[12px] opacity-75 font-normal">
                               ({clientsCount} {clientsCount === 1 ? 'Client' : 'Clients'})
                             </span>
                             <ChevronRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
@@ -453,7 +453,7 @@ export const EmployeeMasterPage: React.FC = () => {
 
                       <td className="py-3 px-4">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          className={`px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
                             emp.status === 'active'
                               ? 'bg-status-greenLight text-status-green dark:bg-status-green/20'
                               : 'bg-light-border dark:bg-dark-border text-light-textMuted'
@@ -514,7 +514,7 @@ export const EmployeeMasterPage: React.FC = () => {
                     <h3 className="font-bold text-base text-light-textPrimary dark:text-dark-textPrimary">
                       {selectedEmpForWorks.name}
                     </h3>
-                    <span className="font-mono text-[11px] font-semibold text-brand-500 bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-200 dark:border-brand-500/20">
+                    <span className="font-mono text-[13px] font-semibold text-brand-500 bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-md border border-brand-200 dark:border-brand-500/20">
                       {selectedEmpForWorks.employeeCode}
                     </span>
                   </div>
@@ -546,7 +546,7 @@ export const EmployeeMasterPage: React.FC = () => {
               {/* Quick KPI Stats Row */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-brand-500" />
                     Total Works
                   </div>
@@ -556,7 +556,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Users className="w-3.5 h-3.5 text-purple-500" />
                     Clients Serviced
                   </div>
@@ -566,7 +566,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-amber-500" />
                     Pending / Active
                   </div>
@@ -576,7 +576,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5 text-status-green" />
                     Completed / Filed
                   </div>
@@ -597,7 +597,7 @@ export const EmployeeMasterPage: React.FC = () => {
                       <Plus className="w-4 h-4" />
                       Assign New Work to {selectedEmpForWorks.name}
                     </h4>
-                    <span className="text-[11px] text-light-textMuted">Fields marked with * are required</span>
+                    <span className="text-[13px] text-light-textMuted">Fields marked with * are required</span>
                   </div>
 
                   {workMastersList.length === 0 && (
@@ -714,7 +714,7 @@ export const EmployeeMasterPage: React.FC = () => {
               <div className="flex items-center justify-between pt-2 border-t border-light-border/60 dark:border-dark-border/60">
                 <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
                   <span>Assigned Work Details</span>
-                  <span className="text-[11px] font-normal text-light-textSecondary">
+                  <span className="text-[13px] font-normal text-light-textSecondary">
                     (Breakdown of which clients' works are assigned and their counts)
                   </span>
                 </div>
@@ -722,7 +722,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 <div className="inline-flex p-0.5 rounded-lg bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-xs">
                   <button
                     onClick={() => setWorksViewMode('clientGrouped')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
                       worksViewMode === 'clientGrouped'
                         ? 'bg-white dark:bg-dark-card shadow-sm text-brand-600 dark:text-brand-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
@@ -732,7 +732,7 @@ export const EmployeeMasterPage: React.FC = () => {
                   </button>
                   <button
                     onClick={() => setWorksViewMode('allList')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
                       worksViewMode === 'allList'
                         ? 'bg-white dark:bg-dark-card shadow-sm text-brand-600 dark:text-brand-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
@@ -754,7 +754,7 @@ export const EmployeeMasterPage: React.FC = () => {
                   <p className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                     No works assigned to {selectedEmpForWorks.name} yet.
                   </p>
-                  <p className="text-[11px] text-light-textMuted mt-1">
+                  <p className="text-[13px] text-light-textMuted mt-1">
                     Click "Assign Work" above to assign a client work to this employee.
                   </p>
                 </div>
@@ -775,11 +775,11 @@ export const EmployeeMasterPage: React.FC = () => {
                           <div>
                             <div className="font-bold text-xs text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
                               <span>{cs.clientName}</span>
-                              <span className="font-mono text-[10px] text-light-textMuted dark:text-dark-textMuted">
+                              <span className="font-mono text-[12px] text-light-textMuted dark:text-dark-textMuted">
                                 {cs.clientCode}
                               </span>
                             </div>
-                            <div className="text-[10px] text-light-textSecondary">
+                            <div className="text-[12px] text-light-textSecondary">
                               PAN: <span className="font-mono font-semibold">{cs.pan}</span>
                               {cs.mobile && <span> • Mobile: {cs.mobile}</span>}
                             </div>
@@ -811,32 +811,32 @@ export const EmployeeMasterPage: React.FC = () => {
                                     {workName}
                                   </span>
                                   {w.taxName && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300 border border-brand-200/60 dark:border-brand-500/20">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] font-bold bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300 border border-brand-200/60 dark:border-brand-500/20">
                                       Tax: {w.taxName}
                                     </span>
                                   )}
-                                  <span className="font-mono text-[10px] text-light-textMuted">
+                                  <span className="font-mono text-[12px] text-light-textMuted">
                                     ({w.workCode})
                                   </span>
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
+                                  <span className="px-2 py-0.5 rounded text-[12px] font-bold bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
                                     {category}
                                   </span>
                                 </div>
                                 {w.remarks && (
-                                  <p className="text-[11px] text-light-textSecondary italic">
+                                  <p className="text-[13px] text-light-textSecondary italic">
                                     "{w.remarks}"
                                   </p>
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-3 text-[11px]">
+                              <div className="flex items-center gap-3 text-[13px]">
                                 <div className="flex items-center gap-1 text-light-textSecondary">
                                   <Calendar className="w-3.5 h-3.5 text-light-textMuted" />
                                   <span>Due: {new Date(w.dueDate).toLocaleDateString()}</span>
                                 </div>
 
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  className={`px-2 py-0.5 rounded text-[12px] font-bold ${
                                     w.priority === 'Urgent'
                                       ? 'bg-status-red/10 text-status-red'
                                       : w.priority === 'High'
@@ -848,7 +848,7 @@ export const EmployeeMasterPage: React.FC = () => {
                                 </span>
 
                                 <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
                                     ['Completed', 'Filed'].includes(w.status)
                                       ? 'bg-status-greenLight text-status-green'
                                       : w.status === 'In Progress'
@@ -871,7 +871,7 @@ export const EmployeeMasterPage: React.FC = () => {
                 <div className="overflow-x-auto border border-light-border dark:border-dark-border rounded-xl">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[11px] font-semibold text-light-textSecondary">
+                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[13px] font-semibold text-light-textSecondary">
                         <th className="py-2.5 px-3">Work Code</th>
                         <th className="py-2.5 px-3">Work Name</th>
                         <th className="py-2.5 px-3">Client</th>
@@ -889,14 +889,14 @@ export const EmployeeMasterPage: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             <div className="font-semibold">{w.clientId?.businessName || w.clientId?.name}</div>
-                            <div className="text-[10px] text-light-textMuted font-mono">{w.clientId?.pan}</div>
+                            <div className="text-[12px] text-light-textMuted font-mono">{w.clientId?.pan}</div>
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             {new Date(w.dueDate).toLocaleDateString()}
                           </td>
                           <td className="py-2.5 px-3">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded text-[12px] font-bold ${
                                 w.priority === 'Urgent'
                                   ? 'bg-status-red/10 text-status-red'
                                   : w.priority === 'High'
@@ -909,7 +909,7 @@ export const EmployeeMasterPage: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-3">
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded-full text-[12px] font-bold ${
                                 ['Completed', 'Filed'].includes(w.status)
                                   ? 'bg-status-greenLight text-status-green'
                                   : 'bg-amber-50 text-amber-600'
@@ -928,7 +928,7 @@ export const EmployeeMasterPage: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/30 flex items-center justify-between">
-              <span className="text-[11px] text-light-textSecondary">
+              <span className="text-[13px] text-light-textSecondary">
                 Total {worksStats.totalWorks} assigned tasks across {worksStats.uniqueClients} clients
               </span>
               <button
@@ -1071,7 +1071,7 @@ export const EmployeeMasterPage: React.FC = () => {
                         Assign Initial Work (Work Master Allocation)
                       </span>
                     </label>
-                    <span className="text-[10px] text-light-textMuted">Optional</span>
+                    <span className="text-[12px] text-light-textMuted">Optional</span>
                   </div>
 
                   {formData.assignInitialWork && (

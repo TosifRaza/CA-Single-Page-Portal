@@ -218,7 +218,7 @@ export const TaxGroupMasterPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4 w-14">#</th>
                 <th className="py-3 px-4">Tax Group Name</th>
                 <th className="py-3 px-4">Group Code</th>
@@ -254,7 +254,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                       {g.groupName}
                     </td>
                     <td className="py-3.5 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">
-                      <span className="px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-[11px]">
+                      <span className="px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-[13px]">
                         {g.groupCode}
                       </span>
                     </td>
@@ -262,7 +262,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                       {(g.linkedTaxesCount ?? 0) > 0 ? (
                         <NavLink
                           to="/masters/tax"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer"
                           title="View taxes under this group in Tax Master"
                         >
                           <Receipt className="w-3.5 h-3.5 text-brand-500" />
@@ -271,7 +271,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                           </span>
                         </NavLink>
                       ) : (
-                        <span className="text-[11px] text-light-textMuted italic">0 Taxes</span>
+                        <span className="text-[13px] text-light-textMuted italic">0 Taxes</span>
                       )}
                     </td>
                     <td className="py-3.5 px-4 text-light-textSecondary dark:text-dark-textSecondary">
@@ -286,11 +286,11 @@ export const TaxGroupMasterPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4">
                       {g.status === 'active' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-status-greenLight dark:bg-status-green/20 text-status-green">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-semibold bg-status-greenLight dark:bg-status-green/20 text-status-green">
                           <CheckCircle2 className="w-3 h-3" /> Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-status-redLight dark:bg-status-red/20 text-status-red">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-semibold bg-status-redLight dark:bg-status-red/20 text-status-red">
                           <XCircle className="w-3 h-3" /> Inactive
                         </span>
                       )}
@@ -361,7 +361,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-semibold text-xs"
                 />
-                <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
+                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                   Name of statutory tax category
                 </span>
               </div>
@@ -370,7 +370,7 @@ export const TaxGroupMasterPage: React.FC = () => {
               <div>
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary flex items-center justify-between">
                   <span>Due Date / Statutory Date *</span>
-                  <span className="text-[10px] text-light-textMuted font-normal">Select date</span>
+                  <span className="text-[12px] text-light-textMuted font-normal">Select date</span>
                 </label>
                 <input
                   type="date"
@@ -379,7 +379,7 @@ export const TaxGroupMasterPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-semibold text-xs cursor-pointer"
                 />
-                <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
+                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                   Statutory compliance due date for this tax group
                 </span>
               </div>

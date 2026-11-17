@@ -33,7 +33,7 @@ export const QuickActions: React.FC = () => {
   ];
 
   return (
-    <div className="p-5 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark h-full flex flex-col justify-between">
+    <div className="p-5 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark flex flex-col gap-3">
       <h3 className="font-bold text-sm text-light-textPrimary dark:text-dark-textPrimary mb-3">
         Quick Actions
       </h3>

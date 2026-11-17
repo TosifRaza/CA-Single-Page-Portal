@@ -147,7 +147,7 @@ export const PaymentsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4">Payment Code</th>
                 <th className="py-3 px-4">Client</th>
                 <th className="py-3 px-4">Invoice No</th>
@@ -182,7 +182,7 @@ export const PaymentsPage: React.FC = () => {
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                      className={`px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
                         p.status === 'Paid'
                           ? 'bg-status-greenLight text-status-green'
                           : p.status === 'Partial'

@@ -164,7 +164,7 @@ export const ClientsPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4">Code</th>
                 <th className="py-3 px-4">Client / Business</th>
                 <th className="py-3 px-4">Type</th>
@@ -190,13 +190,13 @@ export const ClientsPage: React.FC = () => {
                       {c.businessName || c.name}
                     </div>
                     {c.businessName && c.businessName !== c.name && (
-                      <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary">
+                      <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary">
                         Prop: {c.name}
                       </div>
                     )}
                   </td>
                   <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary">
-                    <span className="px-2 py-0.5 rounded-full bg-light-border/50 dark:bg-dark-border/50 text-[10px] font-semibold">
+                    <span className="px-2 py-0.5 rounded-full bg-light-border/50 dark:bg-dark-border/50 text-[12px] font-semibold">
                       {c.businessType || c.clientType}
                     </span>
                   </td>
@@ -208,10 +208,10 @@ export const ClientsPage: React.FC = () => {
                   </td>
                   <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary">
                     <div>{c.mobile}</div>
-                    {c.email && <div className="text-[10px] text-light-textMuted">{c.email}</div>}
+                    {c.email && <div className="text-[12px] text-light-textMuted">{c.email}</div>}
                   </td>
                   <td className="py-3 px-4">
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-status-greenLight text-status-green">
+                    <span className="px-2.5 py-0.5 rounded-full text-[13px] font-semibold bg-status-greenLight text-status-green">
                       {c.status}
                     </span>
                   </td>
@@ -293,17 +293,17 @@ export const ClientsPage: React.FC = () => {
             {/* Quick Profile Summary */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-light-bg dark:bg-dark-cardSecondary text-xs mb-5 font-medium">
               <div>
-                <span className="text-light-textMuted block text-[11px]">Primary Contact</span>
+                <span className="text-light-textMuted block text-[13px]">Primary Contact</span>
                 <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                   {selectedClient.client?.contactPerson || selectedClient.contactPerson || selectedClient.name}
                 </span>
               </div>
               <div>
-                <span className="text-light-textMuted block text-[11px]">Mobile</span>
+                <span className="text-light-textMuted block text-[13px]">Mobile</span>
                 <span className="font-semibold">{selectedClient.client?.mobile || selectedClient.mobile}</span>
               </div>
               <div>
-                <span className="text-light-textMuted block text-[11px]">Email</span>
+                <span className="text-light-textMuted block text-[13px]">Email</span>
                 <span className="font-semibold">{selectedClient.client?.email || selectedClient.email || '-'}</span>
               </div>
             </div>
@@ -325,7 +325,7 @@ export const ClientsPage: React.FC = () => {
                         <span className="font-semibold">{w.workMasterId?.workName || 'Compliance Work'}</span>
                         <span className="text-light-textMuted ml-2">Due: {new Date(w.dueDate).toLocaleDateString()}</span>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-50 dark:bg-brand-500/20 text-brand-500">
+                      <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-brand-50 dark:bg-brand-500/20 text-brand-500">
                         {w.status}
                       </span>
                     </div>

@@ -29,7 +29,7 @@ export const UpcomingDeadlinesWidget: React.FC<UpcomingDeadlinesWidgetProps> = (
   };
 
   return (
-    <div className="p-5 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark h-full flex flex-col justify-between">
+    <div className="p-5 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark h-full flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-sm text-light-textPrimary dark:text-dark-textPrimary">
@@ -53,7 +53,7 @@ export const UpcomingDeadlinesWidget: React.FC<UpcomingDeadlinesWidgetProps> = (
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border/70 dark:border-dark-border/70 text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
+              <tr className="border-b border-light-border/70 dark:border-dark-border/70 text-[13px] font-semibold text-light-textMuted dark:text-dark-textMuted">
                 <th className="pb-2.5 font-medium">Tax / Work</th>
                 <th className="pb-2.5 font-medium">Client</th>
                 <th className="pb-2.5 font-medium">Due Date</th>
@@ -77,7 +77,7 @@ export const UpcomingDeadlinesWidget: React.FC<UpcomingDeadlinesWidgetProps> = (
                   </td>
                   <td className="py-2.5 text-right whitespace-nowrap">
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                      className={`inline-block px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
                         item.status === 'Completed'
                           ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
                           : item.status === 'Overdue'

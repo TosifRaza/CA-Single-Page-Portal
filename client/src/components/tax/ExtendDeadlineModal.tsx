@@ -136,7 +136,7 @@ export const ExtendDeadlineModal: React.FC<ExtendDeadlineModalProps> = ({
           </div>
 
           {/* Audit History Note */}
-          <div className="flex items-start gap-2 p-3 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-blue-400 text-[11px]">
+          <div className="flex items-start gap-2 p-3 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-blue-400 text-[13px]">
             <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span>
               This change will be logged in the permanent compliance audit trail. The original statutory deadline ({currentDueDateStr}) will remain intact for reporting.

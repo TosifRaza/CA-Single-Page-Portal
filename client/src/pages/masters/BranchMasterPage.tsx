@@ -83,7 +83,7 @@ export const BranchMasterPage: React.FC = () => {
               <span className="text-xs font-bold font-mono px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
                 {b.branchCode}
               </span>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-status-greenLight text-status-green">
+              <span className="px-2 py-0.5 rounded-full text-[12px] font-semibold bg-status-greenLight text-status-green">
                 {b.status}
               </span>
             </div>

@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                 if (searchResults) setSearchOpen(true);
               }}
               placeholder="Search anything... (Clients, Tax, Works...)"
-              className="w-full pl-10 pr-4 py-2 text-[13px] bg-light-bg dark:bg-dark-bg border border-light-border/80 dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary placeholder:text-light-textMuted dark:placeholder:text-dark-textMuted focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all"
+              className="w-full pl-10 pr-4 py-2 text-[15px] bg-light-bg dark:bg-dark-bg border border-light-border/80 dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary placeholder:text-light-textMuted dark:placeholder:text-dark-textMuted focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500 transition-all"
             />
           </div>
 
@@ -139,7 +139,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
             <div className="absolute top-12 left-0 right-0 p-3 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl shadow-xl z-50 max-h-[420px] overflow-y-auto animate-in fade-in slide-in-from-top-2">
               {searchResults.clients?.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
+                  <div className="text-[13px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
                     Clients
                   </div>
                   {searchResults.clients.map((c: any) => (
@@ -154,7 +154,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                         {c.businessName || c.name}
                       </span>
-                      <span className="text-[11px] text-brand-500 font-medium">{c.pan}</span>
+                      <span className="text-[13px] text-brand-500 font-medium">{c.pan}</span>
                     </div>
                   ))}
                 </div>
@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
               {searchResults.works?.length > 0 && (
                 <div className="mb-3">
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
+                  <div className="text-[13px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
                     Work Assignments
                   </div>
                   {searchResults.works.map((w: any) => (
@@ -177,7 +177,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       <span className="font-medium text-light-textPrimary dark:text-dark-textPrimary">
                         {w.workCode} — {w.workMasterId?.workName}
                       </span>
-                      <span className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary">
+                      <span className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary">
                         {w.clientId?.businessName || w.clientId?.name}
                       </span>
                     </div>
@@ -187,7 +187,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
               {searchResults.taxes?.length > 0 && (
                 <div>
-                  <div className="text-[11px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
+                  <div className="text-[13px] font-bold uppercase tracking-wider text-light-textMuted dark:text-dark-textMuted mb-1 px-2">
                     Tax Master
                   </div>
                   {searchResults.taxes.map((t: any) => (
@@ -202,7 +202,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                         {t.taxName} ({t.taxGroup})
                       </span>
-                      <span className="text-[11px] text-status-green font-medium">{t.dueDateRule}</span>
+                      <span className="text-[13px] text-status-green font-medium">{t.dueDateRule}</span>
                     </div>
                   ))}
                 </div>
@@ -231,7 +231,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
           >
             <Bell className="w-5 h-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[10px] font-bold text-white bg-status-red rounded-full ring-2 ring-white dark:ring-dark-sidebar">
+              <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[17px] h-[17px] px-1 text-[12px] font-bold text-white bg-status-red rounded-full ring-2 ring-white dark:ring-dark-sidebar">
                 {unreadCount}
               </span>
             )}
@@ -245,14 +245,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                     Notifications
                   </span>
                   {unreadCount > 0 && (
-                    <span className="px-2 py-0.5 text-[10px] font-semibold bg-brand-500/10 text-brand-500 rounded-full">
+                    <span className="px-2 py-0.5 text-[12px] font-semibold bg-brand-500/10 text-brand-500 rounded-full">
                       {unreadCount} new
                     </span>
                   )}
                 </div>
                 <button
                   onClick={handleMarkAllRead}
-                  className="text-[11px] font-medium text-brand-500 hover:text-brand-600 flex items-center gap-1"
+                  className="text-[13px] font-medium text-brand-500 hover:text-brand-600 flex items-center gap-1"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   <span>Mark all read</span>
@@ -271,7 +271,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
                       }`}
                     >
                       <div className="font-semibold text-xs mb-0.5">{n.title}</div>
-                      <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary leading-relaxed">
+                      <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary leading-relaxed">
                         {n.message}
                       </div>
                     </div>

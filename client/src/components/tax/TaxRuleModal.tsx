@@ -705,13 +705,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
               </div>
               {taxGroup && (
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/40 px-2.5 py-0.5 rounded-md border border-brand-200 dark:border-brand-800">
+                  <span className="text-[13px] text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/40 px-2.5 py-0.5 rounded-md border border-brand-200 dark:border-brand-800">
                     Tax Group: {taxGroup}
                   </span>
                   <button
                     type="button"
                     onClick={() => setShowGroupSelect((prev) => !prev)}
-                    className="text-[11px] text-brand-600 dark:text-brand-400 hover:underline font-semibold"
+                    className="text-[13px] text-brand-600 dark:text-brand-400 hover:underline font-semibold"
                   >
                     {showGroupSelect ? 'Cancel' : 'Change'}
                   </button>
@@ -811,7 +811,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
               {/* Dynamic Suggestions for this Tax Group */}
               {currentConfig?.suggestions && currentConfig.suggestions.length > 0 && (
                 <div className="sm:col-span-2">
-                  <div className="flex items-center gap-1.5 mb-1.5 text-[11px] font-semibold text-brand-600 dark:text-brand-400">
+                  <div className="flex items-center gap-1.5 mb-1.5 text-[13px] font-semibold text-brand-600 dark:text-brand-400">
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>Common Statutory Forms for {taxGroup} (Click to auto-configure):</span>
                   </div>
@@ -821,7 +821,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                         key={sug.name}
                         type="button"
                         onClick={() => applyTaxSuggestion(sug)}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border transition-colors flex items-center gap-1 ${
+                        className={`px-2.5 py-1 rounded-lg text-[13px] font-medium border transition-colors flex items-center gap-1 ${
                           taxName === sug.name
                             ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
                             : 'bg-light-bg dark:bg-dark-bg border-light-border dark:border-dark-border text-light-textSecondary dark:text-dark-textSecondary hover:border-brand-500/50'
@@ -829,7 +829,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                         title={sug.desc}
                       >
                         <span>{sug.name}</span>
-                        <span className="text-[9px] opacity-75">({sug.freq})</span>
+                        <span className="text-[11px] opacity-75">({sug.freq})</span>
                       </button>
                     ))}
                   </div>
@@ -856,7 +856,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     </option>
                   ))}
                 </select>
-                <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
+                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                   {taxGroup === 'Income Tax'
                     ? 'Income Tax returns are filed annually'
                     : taxGroup === 'TDS' || taxGroup === 'TCS'
@@ -902,7 +902,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   Applicable Business / Client Types
                 </label>
                 {taxGroup === 'ROC' && (
-                  <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">
+                  <span className="text-[12px] text-amber-600 dark:text-amber-400 font-semibold">
                     (ROC applies strictly to Companies & LLPs)
                   </span>
                 )}
@@ -919,7 +919,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                       type="button"
                       disabled={isRestricted}
                       onClick={() => toggleClientType(type)}
-                      className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                      className={`px-3 py-1 rounded-lg text-[13px] font-semibold border transition-all ${
                         selected
                           ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
                           : isRestricted
@@ -1127,7 +1127,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   Section C: Client Filing & Submission
                 </h3>
               </div>
-              <span className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+              <span className="text-[13px] text-light-textMuted dark:text-dark-textMuted">
                 {selectedClientId ? 'Client Linked (Filing Mode)' : 'Master Template Mode'}
               </span>
             </div>
@@ -1159,7 +1159,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
             {/* If NO client is selected, show helpful explanation and hide submission clutter! */}
             {!selectedClientId ? (
-              <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-[11px] text-brand-700 dark:text-brand-300 flex items-start gap-2">
+              <div className="p-3.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 text-[13px] text-brand-700 dark:text-brand-300 flex items-start gap-2">
                 <Info className="w-4 h-4 shrink-0 mt-0.5 text-brand-500" />
                 <div>
                   <strong>Reusable Master Rule Mode:</strong> You are creating a reusable statutory rule
@@ -1392,11 +1392,11 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                       </div>
                       <div>
                         {differenceAmount === 0 ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-greenLight dark:bg-status-green/20 text-status-green">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-status-greenLight dark:bg-status-green/20 text-status-green">
                             <CheckCircle2 className="w-3 h-3" /> Fully Matched
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-status-redLight dark:bg-status-red/20 text-status-red">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-bold bg-status-redLight dark:bg-status-red/20 text-status-red">
                             <ShieldAlert className="w-3 h-3" /> Mismatch Detected
                           </span>
                         )}
@@ -1490,7 +1490,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                         key={days}
                         type="button"
                         onClick={() => toggleReminderDay(days)}
-                        className={`px-3 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
+                        className={`px-3 py-1 rounded-lg text-[13px] font-semibold border transition-all ${
                           active
                             ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
                             : 'bg-light-bg dark:bg-dark-bg text-light-textSecondary dark:text-dark-textSecondary border-light-border dark:border-dark-border hover:border-brand-500/40'

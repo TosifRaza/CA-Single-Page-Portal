@@ -236,7 +236,7 @@ export const ClientMasterPage: React.FC = () => {
 
       {activeTab === 'form' ? (
         /* Simple, Clean, Single-Card Registration Form */
-        <div className="p-6 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark transition-colors max-w-4xl">
+        <div className="w-full p-6 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark transition-colors">
           {/* Header indicator when editing */}
           {editingClientId && (
             <div className="mb-5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-center justify-between">
@@ -258,7 +258,7 @@ export const ClientMasterPage: React.FC = () => {
               <UserCheck className="w-4 h-4 text-brand-500" />
               <span>{editingClientId ? 'Update Client Details' : 'New Client Registration'}</span>
             </h2>
-            <span className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+            <span className="text-[13px] text-light-textMuted dark:text-dark-textMuted">
               * Required fields
             </span>
           </div>
@@ -269,7 +269,7 @@ export const ClientMasterPage: React.FC = () => {
               <div>
                 <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                   Client Group / Parent Umbrella
-                  <span className="ml-1 text-[11px] font-normal text-light-textMuted dark:text-dark-textMuted">
+                  <span className="ml-1 text-[13px] font-normal text-light-textMuted dark:text-dark-textMuted">
                     (Optional - e.g. Singhania Group)
                   </span>
                 </label>
@@ -325,7 +325,7 @@ export const ClientMasterPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
                 />
-                <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted block mt-1">
+                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted block mt-1">
                   Name as registered on PAN Card
                 </span>
               </div>
@@ -341,7 +341,7 @@ export const ClientMasterPage: React.FC = () => {
                   onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
                 />
-                <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted block mt-1">
+                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted block mt-1">
                   Operating firm name used for billing/invoicing
                 </span>
               </div>
@@ -542,7 +542,7 @@ export const ClientMasterPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                   <th className="py-3 px-4">Code</th>
                   <th className="py-3 px-4">Group</th>
                   <th className="py-3 px-4">Trade / Business Name</th>
@@ -570,12 +570,12 @@ export const ClientMasterPage: React.FC = () => {
                       <td className="py-3 px-4 text-brand-500 font-semibold">{c.clientCode}</td>
                       <td className="py-3 px-4">
                         {c.groupName ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100/70 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-blue-100/70 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
                             <Layers className="w-2.5 h-2.5" />
                             {c.groupName}
                           </span>
                         ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted text-[11px]">-</span>
+                          <span className="text-light-textMuted dark:text-dark-textMuted text-[13px]">-</span>
                         )}
                       </td>
                       <td className="py-3 px-4 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
@@ -585,14 +585,14 @@ export const ClientMasterPage: React.FC = () => {
                         {c.name}
                       </td>
                       <td className="py-3 px-4">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
+                        <span className="px-2 py-0.5 rounded-md text-[12px] font-medium bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
                           {c.businessType || c.clientType}
                         </span>
                       </td>
                       <td className="py-3 px-4 font-mono font-medium">
                         <div className="text-light-textPrimary dark:text-dark-textPrimary">{c.pan}</div>
                         {c.cin && (
-                          <div className="text-[10px] text-brand-600 dark:text-brand-400 font-mono tracking-tighter">
+                          <div className="text-[12px] text-brand-600 dark:text-brand-400 font-mono tracking-tighter">
                             CIN: {c.cin}
                           </div>
                         )}

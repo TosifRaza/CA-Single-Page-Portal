@@ -435,7 +435,7 @@ export const WorkMasterPage: React.FC = () => {
               <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
                 Dependency Notice: Work Master strictly depends on Tax Master & Compliance
               </h4>
-              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+              <p className="text-[13px] text-amber-700 dark:text-amber-300">
                 Currently 0 active Taxes are configured in Tax Master. You cannot create work templates or assign works until at least one Tax is added.
               </p>
             </div>
@@ -524,7 +524,7 @@ export const WorkMasterPage: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
+              <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                 <th className="py-3 px-4 font-semibold w-12">ID</th>
                 <th className="py-3 px-4 font-semibold">Work Name</th>
                 <th className="py-3 px-4 font-semibold">Tax Name</th>
@@ -575,21 +575,21 @@ export const WorkMasterPage: React.FC = () => {
                             <span>{associatedTax.taxName}</span>
                           </div>
                         ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted italic text-[11px]">
+                          <span className="text-light-textMuted dark:text-dark-textMuted italic text-[13px]">
                             Not linked
                           </span>
                         )}
                       </td>
                       {/* Tax Group Column */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
+                        <span className="px-2.5 py-0.5 rounded-md text-[12px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
                           {associatedTax?.taxGroup || work.category || 'GST'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary font-semibold whitespace-nowrap">
                         {work.timeline}
                       </td>
-                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary text-[11px] whitespace-nowrap">
+                      <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary text-[13px] whitespace-nowrap">
                         {associatedTax?.dueDateRule || '—'}
                       </td>
 
@@ -599,7 +599,7 @@ export const WorkMasterPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenWorkAssignments(work)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 transition-all cursor-pointer group"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 transition-all cursor-pointer group"
                             title="Click to view assigned employees and clients"
                           >
                             <Users className="w-3.5 h-3.5 text-purple-500" />
@@ -607,20 +607,20 @@ export const WorkMasterPage: React.FC = () => {
                               {work.assignedEmployeesCount}{' '}
                               {work.assignedEmployeesCount === 1 ? 'Employee' : 'Employees'}
                             </span>
-                            <span className="text-[10px] opacity-75 font-normal">
+                            <span className="text-[12px] opacity-75 font-normal">
                               ({work.totalAssignmentsCount} tasks)
                             </span>
                             <ChevronRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
                           </button>
                         ) : (
                           <div className="flex items-center gap-1.5">
-                            <span className="text-light-textMuted dark:text-dark-textMuted italic text-[11px]">
+                            <span className="text-light-textMuted dark:text-dark-textMuted italic text-[13px]">
                               Unassigned
                             </span>
                             <button
                               type="button"
                               onClick={() => handleOpenQuickAssign(work)}
-                              className="text-[10px] text-brand-500 hover:underline font-semibold"
+                              className="text-[12px] text-brand-500 hover:underline font-semibold"
                             >
                               + Assign
                             </button>
@@ -630,7 +630,7 @@ export const WorkMasterPage: React.FC = () => {
 
                       <td className="py-3 px-4">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
                             work.status === 'Active'
                               ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
                               : 'bg-light-border dark:bg-dark-border text-light-textMuted'
@@ -747,7 +747,7 @@ export const WorkMasterPage: React.FC = () => {
                   <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <div className="space-y-1">
                     <div className="font-bold text-xs">Work Master strictly depends on Tax Master & Compliance</div>
-                    <div className="text-[11px] leading-relaxed">
+                    <div className="text-[13px] leading-relaxed">
                       Currently 0 active Taxes are configured in Tax Master. You cannot create a work template without linking to an active Tax.
                     </div>
                     <NavLink
@@ -763,8 +763,8 @@ export const WorkMasterPage: React.FC = () => {
 
               {/* --- STEP 1: INITIAL 2 FIELDS (Work Name & Select Tax Name) --- */}
               <div className="p-4 rounded-xl border border-brand-200/80 dark:border-brand-500/20 bg-brand-50/30 dark:bg-brand-500/5 space-y-4">
-                <div className="text-[11px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center text-[10px]">1</span>
+                <div className="text-[13px] font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <span className="w-4 h-4 rounded-full bg-brand-500 text-white flex items-center justify-center text-[12px]">1</span>
                   Basic Work & Tax Information
                 </div>
 
@@ -782,7 +782,7 @@ export const WorkMasterPage: React.FC = () => {
                       onChange={(e) => setFormData({ ...formData, workName: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-xs shadow-2xs"
                     />
-                    <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
+                    <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                       Name of the job / assignment
                     </span>
                   </div>
@@ -794,7 +794,7 @@ export const WorkMasterPage: React.FC = () => {
                       <NavLink
                         to="/masters/tax"
                         target="_blank"
-                        className="text-[10px] font-semibold text-brand-500 hover:underline"
+                        className="text-[12px] font-semibold text-brand-500 hover:underline"
                       >
                         + View Tax Master
                       </NavLink>
@@ -818,7 +818,7 @@ export const WorkMasterPage: React.FC = () => {
                         </option>
                       )}
                     </select>
-                    <span className="text-[10px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
+                    <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                       Populated exclusively from your Tax Master rules
                     </span>
                   </div>
@@ -852,19 +852,19 @@ export const WorkMasterPage: React.FC = () => {
                           </span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
                             Group: {selectedTax.taxGroup}
                           </span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30">
                             {selectedTax.frequency || selectedTax.filingFrequency || 'Monthly'}
                           </span>
                         </div>
                       </div>
 
                       {/* Details Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[11px]">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
                         <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[10px] font-semibold">
+                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
                             Due Date Rule
                           </span>
                           <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block">
@@ -873,7 +873,7 @@ export const WorkMasterPage: React.FC = () => {
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[10px] font-semibold">
+                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
                             Reconciliation
                           </span>
                           <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block flex items-center gap-1">
@@ -888,7 +888,7 @@ export const WorkMasterPage: React.FC = () => {
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[10px] font-semibold">
+                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
                             Statutory Priority
                           </span>
                           <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block">
@@ -897,7 +897,7 @@ export const WorkMasterPage: React.FC = () => {
                         </div>
 
                         <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[10px] font-semibold">
+                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
                             Reporting Cycle
                           </span>
                           <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block truncate">
@@ -910,7 +910,7 @@ export const WorkMasterPage: React.FC = () => {
 
                       {/* Description / Instructions */}
                       {selectedTax.description && (
-                        <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary bg-white/60 dark:bg-dark-bg/40 p-2.5 rounded-lg border border-blue-100/80 dark:border-blue-500/10">
+                        <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary bg-white/60 dark:bg-dark-bg/40 p-2.5 rounded-lg border border-blue-100/80 dark:border-blue-500/10">
                           <span className="font-semibold text-blue-900 dark:text-blue-300">Regulatory Notes: </span>
                           {selectedTax.description}
                         </div>
@@ -925,8 +925,8 @@ export const WorkMasterPage: React.FC = () => {
 
                   {/* Work Execution Settings */}
                   <div className="space-y-4 pt-2">
-                    <div className="text-[11px] font-bold text-light-textSecondary dark:text-dark-textSecondary uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[10px]">2</span>
+                    <div className="text-[13px] font-bold text-light-textSecondary dark:text-dark-textSecondary uppercase tracking-wider flex items-center gap-1.5">
+                      <span className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[12px]">2</span>
                       Work Execution & Template Settings
                     </div>
 
@@ -969,7 +969,7 @@ export const WorkMasterPage: React.FC = () => {
                               key={t}
                               type="button"
                               onClick={() => setFormData({ ...formData, timeline: t })}
-                              className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border transition-colors ${
+                              className={`px-1.5 py-0.5 rounded text-[12px] font-semibold border transition-colors ${
                                 formData.timeline === t
                                   ? 'bg-brand-500 text-white border-brand-500'
                                   : 'bg-light-bg dark:bg-dark-card border-light-border dark:border-dark-border text-light-textMuted hover:text-light-textPrimary'
@@ -1090,7 +1090,7 @@ export const WorkMasterPage: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="flex items-center justify-between px-6 py-3.5 border-t border-light-border dark:border-dark-border bg-white dark:bg-dark-card">
-              <div className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+              <div className="text-[13px] text-light-textMuted dark:text-dark-textMuted">
                 {formData.taxId ? (
                   <span className="font-semibold text-brand-600 dark:text-brand-400">
                     Linked to Tax Master: {selectedTax?.taxName || 'Selected Tax'}
@@ -1150,7 +1150,7 @@ export const WorkMasterPage: React.FC = () => {
                         <span>Tax Name: {selectedWorkTax.taxName}</span>
                       </span>
                     )}
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
+                    <span className="text-[13px] font-bold px-2 py-0.5 rounded-md bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
                       {selectedWorkTax?.taxGroup || selectedWorkForAssignments.category}
                     </span>
                   </div>
@@ -1184,7 +1184,7 @@ export const WorkMasterPage: React.FC = () => {
               {/* Quick KPI Stats Row */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Briefcase className="w-3.5 h-3.5 text-purple-500" />
                     Total Active Tasks
                   </div>
@@ -1194,7 +1194,7 @@ export const WorkMasterPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Users className="w-3.5 h-3.5 text-brand-500" />
                     Assigned Employees
                   </div>
@@ -1204,7 +1204,7 @@ export const WorkMasterPage: React.FC = () => {
                 </div>
 
                 <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[11px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
                     <Building className="w-3.5 h-3.5 text-emerald-500" />
                     Unique Clients
                   </div>
@@ -1225,7 +1225,7 @@ export const WorkMasterPage: React.FC = () => {
                       <Plus className="w-4 h-4" />
                       Assign "{selectedWorkForAssignments.workName}" to an Employee
                     </h4>
-                    <span className="text-[11px] text-light-textMuted">Fields marked with * are required</span>
+                    <span className="text-[13px] text-light-textMuted">Fields marked with * are required</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -1333,7 +1333,7 @@ export const WorkMasterPage: React.FC = () => {
               <div className="flex items-center justify-between pt-2 border-t border-light-border/60 dark:border-dark-border/60">
                 <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
                   <span>Assigned Personnel & Clients</span>
-                  <span className="text-[11px] font-normal text-light-textSecondary">
+                  <span className="text-[13px] font-normal text-light-textSecondary">
                     (Which employee is doing this work for which clients)
                   </span>
                 </div>
@@ -1342,7 +1342,7 @@ export const WorkMasterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAssignmentsViewMode('employeeGrouped')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
                       assignmentsViewMode === 'employeeGrouped'
                         ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
@@ -1353,7 +1353,7 @@ export const WorkMasterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAssignmentsViewMode('allList')}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
                       assignmentsViewMode === 'allList'
                         ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
@@ -1375,7 +1375,7 @@ export const WorkMasterPage: React.FC = () => {
                   <p className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                     No employees have been assigned this work template yet.
                   </p>
-                  <p className="text-[11px] text-light-textMuted mt-1">
+                  <p className="text-[13px] text-light-textMuted mt-1">
                     Click "Assign to Team Member" above to assign it to an employee for a client.
                   </p>
                 </div>
@@ -1396,11 +1396,11 @@ export const WorkMasterPage: React.FC = () => {
                           <div>
                             <div className="font-bold text-xs text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
                               <span>{es.employeeName}</span>
-                              <span className="font-mono text-[10px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20">
+                              <span className="font-mono text-[12px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20">
                                 {es.employeeCode}
                               </span>
                             </div>
-                            <div className="text-[10px] text-light-textSecondary">
+                            <div className="text-[12px] text-light-textSecondary">
                               {es.designation} • {es.department}
                             </div>
                           </div>
@@ -1430,28 +1430,28 @@ export const WorkMasterPage: React.FC = () => {
                                   <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
                                     {clientName}
                                   </span>
-                                  <span className="font-mono text-[10px] text-light-textMuted">
+                                  <span className="font-mono text-[12px] text-light-textMuted">
                                     (PAN: {pan})
                                   </span>
-                                  <span className="font-mono text-[10px] text-brand-500 font-semibold">
+                                  <span className="font-mono text-[12px] text-brand-500 font-semibold">
                                     {a.workCode}
                                   </span>
                                 </div>
                                 {a.remarks && (
-                                  <p className="text-[11px] text-light-textSecondary italic">
+                                  <p className="text-[13px] text-light-textSecondary italic">
                                     "{a.remarks}"
                                   </p>
                                 )}
                               </div>
 
-                              <div className="flex items-center gap-3 text-[11px]">
+                              <div className="flex items-center gap-3 text-[13px]">
                                 <div className="flex items-center gap-1 text-light-textSecondary">
                                   <Calendar className="w-3.5 h-3.5 text-light-textMuted" />
                                   <span>Due: {new Date(a.dueDate).toLocaleDateString()}</span>
                                 </div>
 
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  className={`px-2 py-0.5 rounded text-[12px] font-bold ${
                                     a.priority === 'Urgent'
                                       ? 'bg-status-red/10 text-status-red'
                                       : a.priority === 'High'
@@ -1463,7 +1463,7 @@ export const WorkMasterPage: React.FC = () => {
                                 </span>
 
                                 <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                                  className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
                                     ['Completed', 'Filed'].includes(a.status)
                                       ? 'bg-status-greenLight text-status-green'
                                       : a.status === 'In Progress'
@@ -1486,7 +1486,7 @@ export const WorkMasterPage: React.FC = () => {
                 <div className="overflow-x-auto border border-light-border dark:border-dark-border rounded-xl">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[11px] font-semibold text-light-textSecondary">
+                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[13px] font-semibold text-light-textSecondary">
                         <th className="py-2.5 px-3">Work Code</th>
                         <th className="py-2.5 px-3">Assigned Employee</th>
                         <th className="py-2.5 px-3">Client</th>
@@ -1503,20 +1503,20 @@ export const WorkMasterPage: React.FC = () => {
                             <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
                               {a.employeeId?.name || 'Employee'}
                             </div>
-                            <div className="text-[10px] text-light-textMuted font-mono">
+                            <div className="text-[12px] text-light-textMuted font-mono">
                               {a.employeeId?.employeeCode} • {a.employeeId?.designation}
                             </div>
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             <div className="font-semibold">{a.clientId?.businessName || a.clientId?.name}</div>
-                            <div className="text-[10px] text-light-textMuted font-mono">{a.clientId?.pan}</div>
+                            <div className="text-[12px] text-light-textMuted font-mono">{a.clientId?.pan}</div>
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             {new Date(a.dueDate).toLocaleDateString()}
                           </td>
                           <td className="py-2.5 px-3">
                             <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                              className={`px-2 py-0.5 rounded text-[12px] font-bold ${
                                 a.priority === 'Urgent'
                                   ? 'bg-status-red/10 text-status-red'
                                   : a.priority === 'High'
@@ -1529,7 +1529,7 @@ export const WorkMasterPage: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-3">
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                              className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
                                 ['Completed', 'Filed'].includes(a.status)
                                   ? 'bg-status-greenLight text-status-green'
                                   : 'bg-amber-50 text-amber-600'
@@ -1548,7 +1548,7 @@ export const WorkMasterPage: React.FC = () => {
 
             {/* Modal Footer */}
             <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/30 flex items-center justify-between">
-              <span className="text-[11px] text-light-textSecondary">
+              <span className="text-[13px] text-light-textSecondary">
                 Total {totalWorkAssignmentsCount} active tasks distributed across {employeeSummaries.length} team members
               </span>
               <button

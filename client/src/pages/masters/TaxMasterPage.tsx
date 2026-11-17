@@ -305,7 +305,7 @@ export const TaxMasterPage: React.FC = () => {
               <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
                 Dependency Notice: Tax Master strictly depends on Tax Group Master
               </h4>
-              <p className="text-[11px] text-amber-700 dark:text-amber-300">
+              <p className="text-[13px] text-amber-700 dark:text-amber-300">
                 Currently 0 Tax Groups are configured. You cannot add any Tax Rules until at least one Tax Group is created in Tax Group Master.
               </p>
             </div>
@@ -389,7 +389,7 @@ export const TaxMasterPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
+                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                   <th className="py-3 px-3.5 font-semibold w-10">ID</th>
                   <th className="py-3 px-3.5 font-semibold">Tax Group</th>
                   <th className="py-3 px-3.5 font-semibold">Tax Name</th>
@@ -434,7 +434,7 @@ export const TaxMasterPage: React.FC = () => {
                         {tax.taxId}
                       </td>
                       <td className="py-3 px-3.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
+                        <span className="px-2 py-0.5 rounded-md text-[12px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
                           {tax.taxGroup}
                         </span>
                       </td>
@@ -443,7 +443,7 @@ export const TaxMasterPage: React.FC = () => {
                           {tax.taxName}
                         </div>
                         {tax.taxCode && (
-                          <div className="text-[10px] text-light-textMuted dark:text-dark-textMuted font-mono">
+                          <div className="text-[12px] text-light-textMuted dark:text-dark-textMuted font-mono">
                             {tax.taxCode}
                           </div>
                         )}
@@ -483,18 +483,18 @@ export const TaxMasterPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         {tax.reconciliationRequired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
                             <RefreshCw className="w-2.5 h-2.5" /> Required
                           </span>
                         ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted text-[11px]">
+                          <span className="text-light-textMuted dark:text-dark-textMuted text-[13px]">
                             Optional
                           </span>
                         )}
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                          className={`inline-block px-2 py-0.5 rounded-md text-[12px] font-bold ${
                             tax.priority === 'Critical'
                               ? 'bg-status-red/15 text-status-red'
                               : tax.priority === 'High'
@@ -509,7 +509,7 @@ export const TaxMasterPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
                             tax.status === 'Active'
                               ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
                               : 'bg-light-border dark:bg-dark-border text-light-textMuted'
@@ -637,7 +637,7 @@ export const TaxMasterPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[11px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
+                <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                   <th className="py-3 px-3.5 font-semibold">Client Name</th>
                   <th className="py-3 px-3.5 font-semibold">Tax Name</th>
                   <th className="py-3 px-3.5 font-semibold">Description / Notes</th>
@@ -708,7 +708,7 @@ export const TaxMasterPage: React.FC = () => {
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         {isExtended ? (
                           <span
-                            className="inline-flex items-center gap-1 text-[11px] font-bold text-status-orange"
+                            className="inline-flex items-center gap-1 text-[13px] font-bold text-status-orange"
                             title={f.extensionReason}
                           >
                             <Clock className="w-3 h-3" /> {formatDate(f.extendedDueDate)}
@@ -727,7 +727,7 @@ export const TaxMasterPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                          className={`inline-block px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
                             f.filingStatus === 'Filed'
                               ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
                               : f.filingStatus === 'Ready to File'
@@ -743,7 +743,7 @@ export const TaxMasterPage: React.FC = () => {
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         {f.reconciliationRequired ? (
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold ${
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold ${
                               f.reconciliationStatus === 'Reconciled'
                                 ? 'bg-status-greenLight dark:bg-status-green/20 text-status-green'
                                 : f.reconciliationStatus === 'Mismatch'
@@ -755,7 +755,7 @@ export const TaxMasterPage: React.FC = () => {
                             {f.reconciliationStatus}
                           </span>
                         ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted text-[11px]">
+                          <span className="text-light-textMuted dark:text-dark-textMuted text-[13px]">
                             N/A
                           </span>
                         )}
@@ -787,7 +787,7 @@ export const TaxMasterPage: React.FC = () => {
                           {f.filingStatus !== 'Filed' && (
                             <button
                               onClick={() => handleQuickStatusChange(f._id, 'Filed')}
-                              className="px-2 py-1 rounded-lg bg-status-greenLight dark:bg-status-green/20 text-status-green hover:bg-status-green hover:text-white font-bold text-[10px] transition-colors"
+                              className="px-2 py-1 rounded-lg bg-status-greenLight dark:bg-status-green/20 text-status-green hover:bg-status-green hover:text-white font-bold text-[12px] transition-colors"
                               title="Mark as Filed"
                             >
                               File

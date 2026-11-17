@@ -59,7 +59,7 @@ export const LoginPage: React.FC = () => {
             <ShieldCheck className="w-4 h-4" />
             <span>Pre-seeded Demo Credentials:</span>
           </div>
-          <div className="space-y-1 text-light-textSecondary dark:text-dark-textSecondary text-[11px]">
+          <div className="space-y-1 text-light-textSecondary dark:text-dark-textSecondary text-[13px]">
             <div>• CA Admin: <button type="button" onClick={() => handleDemoQuickLogin('tosif@rizassociates.com')} className="text-brand-500 underline font-semibold">tosif@rizassociates.com</button></div>
             <div>• Password: <span className="font-mono font-bold">Password123!</span></div>
           </div>

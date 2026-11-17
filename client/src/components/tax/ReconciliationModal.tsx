@@ -169,11 +169,11 @@ export const ReconciliationModal: React.FC<ReconciliationModalProps> = ({
                 ₹ {difference.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
               </span>
               {difference === 0 ? (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-greenLight dark:bg-status-green/20 text-status-green">
+                <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-status-greenLight dark:bg-status-green/20 text-status-green">
                   Matched
                 </span>
               ) : (
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-status-redLight dark:bg-status-red/20 text-status-red">
+                <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-status-redLight dark:bg-status-red/20 text-status-red">
                   Mismatch
                 </span>
               )}

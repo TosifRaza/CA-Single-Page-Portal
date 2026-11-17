@@ -81,7 +81,7 @@ export const ServiceMasterPage: React.FC = () => {
           >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
+                <span className="text-[13px] font-bold px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
                   {s.category}
                 </span>
                 <span className="text-xs font-semibold text-status-green flex items-center">
@@ -99,7 +99,7 @@ export const ServiceMasterPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-light-border/60 dark:border-dark-border/60 flex items-center justify-between text-[11px]">
+            <div className="mt-4 pt-3 border-t border-light-border/60 dark:border-dark-border/60 flex items-center justify-between text-[13px]">
               <span className="text-light-textMuted font-medium">Status</span>
               <span className="font-semibold text-status-green">Active</span>
             </div>

@@ -69,7 +69,7 @@ export const ComplianceDonut: React.FC<ComplianceDonutProps> = ({
             <span className="text-2xl font-extrabold text-light-textPrimary dark:text-dark-textPrimary tracking-tight">
               {completedPercent}%
             </span>
-            <span className="text-[11px] font-semibold text-status-green">
+            <span className="text-[13px] font-semibold text-status-green">
               {label}
             </span>
           </div>
