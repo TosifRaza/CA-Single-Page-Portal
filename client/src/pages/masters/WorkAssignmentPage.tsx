@@ -24,7 +24,7 @@ export const WorkAssignmentPage: React.FC = () => {
     clientId: '',
     workMasterId: '',
     employeeId: '',
-    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    dueDate: '',
     remarks: '',
     priority: 'Medium',
   });
@@ -41,21 +41,12 @@ export const WorkAssignmentPage: React.FC = () => {
 
       if (cRes.data?.data?.clients) {
         setClients(cRes.data.data.clients);
-        if (cRes.data.data.clients.length > 0 && !formData.clientId) {
-          setFormData((prev) => ({ ...prev, clientId: cRes.data.data.clients[0]._id }));
-        }
       }
       if (wRes.data?.data?.works) {
         setWorkMasters(wRes.data.data.works);
-        if (wRes.data.data.works.length > 0 && !formData.workMasterId) {
-          setFormData((prev) => ({ ...prev, workMasterId: wRes.data.data.works[0]._id }));
-        }
       }
       if (eRes.data?.data?.employees) {
         setEmployees(eRes.data.data.employees);
-        if (eRes.data.data.employees.length > 0 && !formData.employeeId) {
-          setFormData((prev) => ({ ...prev, employeeId: eRes.data.data.employees[0]._id }));
-        }
       }
       if (aRes.data?.data?.works) {
         setRecentAssignments(aRes.data.data.works);
@@ -84,7 +75,14 @@ export const WorkAssignmentPage: React.FC = () => {
     try {
       const res = await api.post('/work-assignments', formData);
       toast.success('Work assigned successfully! Assignment ID created.');
-      setFormData((prev) => ({ ...prev, remarks: '' }));
+      setFormData({
+        clientId: '',
+        workMasterId: '',
+        employeeId: '',
+        dueDate: '',
+        remarks: '',
+        priority: 'Medium',
+      });
       loadDropdownData();
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Error assigning work';
@@ -94,10 +92,10 @@ export const WorkAssignmentPage: React.FC = () => {
 
   const handleReset = () => {
     setFormData({
-      clientId: clients[0]?._id || '',
-      workMasterId: workMasters[0]?._id || '',
-      employeeId: employees[0]?._id || '',
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      clientId: '',
+      workMasterId: '',
+      employeeId: '',
+      dueDate: '',
       remarks: '',
       priority: 'Medium',
     });
