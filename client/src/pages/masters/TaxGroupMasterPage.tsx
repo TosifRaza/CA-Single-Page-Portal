@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Plus,
-  Search,
   Edit2,
   Trash2,
   CheckCircle2,
@@ -17,8 +16,6 @@ import { TaxGroupItem } from '../../types';
 export const TaxGroupMasterPage: React.FC = () => {
   const [taxGroups, setTaxGroups] = useState<TaxGroupItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All');
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -36,11 +33,7 @@ export const TaxGroupMasterPage: React.FC = () => {
   const fetchTaxGroups = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (search) params.append('search', search);
-      if (statusFilter !== 'All') params.append('status', statusFilter);
-
-      const res = await api.get(`/tax-groups?${params.toString()}`);
+      const res = await api.get('/tax-groups');
       if (res.data?.data) {
         setTaxGroups(res.data.data);
       }
@@ -54,7 +47,7 @@ export const TaxGroupMasterPage: React.FC = () => {
 
   useEffect(() => {
     fetchTaxGroups();
-  }, [search, statusFilter]);
+  }, []);
 
   const handleOpenAddModal = () => {
     setEditingGroup(null);
@@ -151,34 +144,7 @@ export const TaxGroupMasterPage: React.FC = () => {
 
       {/* Main Content Card */}
       <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden">
-        {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-cardSecondary/30">
-          <div className="flex items-center gap-3 w-full sm:w-auto flex-1">
-            <div className="relative flex-1 sm:max-w-xs">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-light-textMuted dark:text-dark-textMuted" />
-              <input
-                type="text"
-                placeholder="Search by Group Name, Code..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2 text-xs rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 transition-all"
-              />
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-light-textSecondary">
-              <span className="font-semibold text-light-textMuted hidden sm:inline">Status:</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-2 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-medium focus:outline-none cursor-pointer"
-              >
-                <option value="All">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-          </div>
-
+        <div className="flex justify-end p-4 border-b border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-cardSecondary/30">
           <div className="text-xs text-light-textMuted dark:text-dark-textMuted font-semibold">
             Showing {taxGroups.length} configured Tax Groups
           </div>
