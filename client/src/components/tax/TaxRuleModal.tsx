@@ -1016,7 +1016,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             <h2 className="text-base font-bold text-light-textPrimary dark:text-dark-textPrimary">
               {editingTax ? 'Edit Tax Rule & Compliance' : 'Add New Tax Rule & Compliance'}
             </h2>
-            <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-medium">
+            <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-normal">
               Configure statutory compliance rules, filing timelines & reconciliations
             </p>
           </div>
@@ -1048,7 +1048,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
             {/* Keep the tax group selector in place while the rest of the form opens below it. */}
             <div className="bg-light-bg/40 dark:bg-dark-cardSecondary/40 p-3.5 rounded-xl border border-light-border dark:border-dark-border">
-              <label className="block text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5 flex items-center gap-1.5">
+              <label className="block text-xs font-normal text-light-textPrimary dark:text-dark-textPrimary mb-1.5 flex items-center gap-1.5">
                 <FolderTree className="w-3.5 h-3.5 text-brand-500" />
                 <span>Select Tax Group *</span>
               </label>
@@ -1056,7 +1056,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 required
                 value={taxGroup}
                 onChange={(e) => handleTaxGroupChange(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer text-xs transition-all shadow-2xs"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary font-normal focus:outline-none focus:ring-2 focus:ring-brand-500/30 cursor-pointer text-xs transition-all shadow-2xs"
               >
                 <option value="">-- Select a Tax Group --</option>
                 {availableTaxGroups && availableTaxGroups.length > 0 ? (
@@ -1090,7 +1090,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   <NavLink
                     to="/masters/tax-groups"
                     onClick={onClose}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs shadow-md shadow-brand-500/20 active:scale-95 transition-all"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-normal text-xs shadow-md shadow-brand-500/20 active:scale-95 transition-all"
                   >
                     <span>+ Go to Tax Group Master</span>
                   </NavLink>
@@ -1104,7 +1104,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Tax Name */}
                   <div className="sm:col-span-2">
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Tax Name *
                 </label>
                 <input
@@ -1126,18 +1126,18 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     setTaxName(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-normal"
                 />
               </div>
 
               {/* Applicable Business Category */}
               <div className="sm:col-span-2">
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                  <label className="block font-normal text-light-textPrimary dark:text-dark-textPrimary">
                     Applicable Business Category
                   </label>
                   {taxGroup === 'ROC' && (
-                    <span className="text-[12px] text-amber-600 dark:text-amber-400 font-semibold">
+                    <span className="text-[12px] text-amber-600 dark:text-amber-400 font-normal">
                       (ROC applies strictly to Companies & LLPs)
                     </span>
                   )}
@@ -1152,7 +1152,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     }
                     setIsDirty(true);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-normal"
                 >
                   <option value="">-- Select Business Category --</option>
                   {hasLegacyBusinessCategory && (
@@ -1183,7 +1183,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 </select>
                 {requiresCustomBusinessCategory && (
                   <div className="mt-3">
-                    <label className="mb-1 block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                    <label className="mb-1 block font-normal text-light-textPrimary dark:text-dark-textPrimary">
                       Specify Business Category *
                     </label>
                     <input
@@ -1195,7 +1195,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                         setIsDirty(true);
                       }}
                       placeholder="Enter the business category"
-                      className="w-full rounded-xl border border-light-border bg-light-bg px-3.5 py-2.5 font-medium text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
+                      className="w-full rounded-xl border border-light-border bg-light-bg px-3.5 py-2.5 font-normal text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
                     />
                   </div>
                 )}
@@ -1203,7 +1203,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
               {/* Description / Regulatory Instructions */}
               <div className="space-y-3 sm:col-span-2">
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Description
                 </label>
                 <textarea
@@ -1214,13 +1214,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     setDescription(e.target.value);
                     setIsDirty(true);
                   }}
-                  className="w-full px-3.5 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 resize-none font-medium"
+                  className="w-full px-3.5 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 resize-none font-normal"
                 />
               </div>
 
               {/* Filing Frequency - Logically filtered by Tax Group! */}
               <div className="sm:col-start-1">
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Filing Frequency *
                 </label>
                 <select
@@ -1255,7 +1255,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
               {/* Financial Year */}
               <div className="sm:col-start-2">
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Financial Year
                 </label>
                 <select
@@ -1314,14 +1314,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     <table className="w-full min-w-[1120px] text-left text-xs">
                       <thead className="bg-light-bg/70 dark:bg-dark-bg/70 text-light-textMuted dark:text-dark-textMuted">
                         <tr>
-                          <th className="px-3 py-2.5 font-semibold">Period</th>
-                          <th className="px-3 py-2.5 font-semibold">Period From</th>
-                          <th className="px-3 py-2.5 font-semibold">Period To</th>
-                          <th className="px-3 py-2.5 font-semibold">Filing Date</th>
-                          <th className="px-3 py-2.5 font-semibold">Submission Date</th>
-                          <th className="px-3 py-2.5 font-semibold">Reconciliation Date</th>
-                          <th className="px-3 py-2.5 font-semibold">Extended Due Date</th>
-                          <th className="px-3 py-2.5 text-right font-semibold">Action</th>
+                          <th className="px-3 py-2.5 font-bold">Period</th>
+                          <th className="px-3 py-2.5 font-bold">Period From</th>
+                          <th className="px-3 py-2.5 font-bold">Period To</th>
+                          <th className="px-3 py-2.5 font-bold">Filing Date</th>
+                          <th className="px-3 py-2.5 font-bold">Submission Date</th>
+                          <th className="px-3 py-2.5 font-bold">Reconciliation Date</th>
+                          <th className="px-3 py-2.5 font-bold">Extended Due Date</th>
+                          <th className="px-3 py-2.5 text-right font-bold">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-light-border dark:divide-dark-border">
@@ -1337,7 +1337,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
                           return (
                             <tr key={index} className="bg-white dark:bg-dark-card">
-                              <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                              <td className="whitespace-nowrap px-3 py-2.5 font-normal text-light-textPrimary dark:text-dark-textPrimary">
                                 {periodTitle}
                               </td>
                               <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
@@ -1370,7 +1370,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                                       );
                                       setIsDirty(true);
                                     }}
-                                    className="rounded-md px-2 py-1 font-semibold text-brand-600 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                                    className="rounded-md px-2 py-1 font-normal text-brand-600 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
                                   >
                                     Edit
                                   </button>
@@ -1385,7 +1385,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                                         setHasEditedFilingSchedule(true);
                                         setIsDirty(true);
                                       }}
-                                      className="rounded-md px-2 py-1 font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                                      className="rounded-md px-2 py-1 font-normal text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
                                     >
                                       Remove
                                     </button>
@@ -1430,7 +1430,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                               setIsDirty(true);
                             }}
                             aria-label={`Remove filing period ${index + 1}`}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-normal text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                             Remove
@@ -1439,7 +1439,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2">
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Period From *
                           </label>
                           <input
@@ -1451,7 +1451,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Period To *
                           </label>
                           <input
@@ -1464,7 +1464,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Filing Date *
                           </label>
                           <input
@@ -1476,7 +1476,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Submission Date
                           </label>
                           <input
@@ -1487,7 +1487,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Reconciliation Date
                           </label>
                           <input
@@ -1498,7 +1498,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Extended Due Date
                           </label>
                           <input
@@ -1514,7 +1514,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           type="button"
                           onClick={() => saveFilingPeriod(index)}
                           disabled={savedFilingPeriodFlags[index]}
-                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-default ${
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-normal transition-colors disabled:cursor-default ${
                             savedFilingPeriodFlags[index]
                               ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
                               : 'bg-brand-600 text-white shadow-sm hover:bg-brand-700'
@@ -1564,7 +1564,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                       setHasEditedFilingSchedule(true);
                       setIsDirty(true);
                     }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 text-brand-600 dark:text-brand-300 font-normal hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                     Add More Filing Schedule
@@ -1581,19 +1581,19 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         <div className="sticky bottom-0 bg-white dark:bg-dark-card px-6 py-3.5 border-t border-light-border dark:border-dark-border flex items-center justify-between z-10">
           <div className="text-xs text-light-textMuted dark:text-dark-textMuted">
             {!taxGroup ? (
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
+              <span className="font-normal text-amber-600 dark:text-amber-400">
                 Please select a tax group first
               </span>
             ) : !frequency ? (
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
+              <span className="font-normal text-amber-600 dark:text-amber-400">
                 Please select a filing frequency
               </span>
             ) : selectedClientId ? (
-              <span className="font-semibold text-purple-600 dark:text-purple-400">
+              <span className="font-normal text-purple-600 dark:text-purple-400">
                 Saving as Client Filing ({taxGroup})
               </span>
             ) : (
-              <span className="font-semibold text-brand-600 dark:text-brand-400">
+              <span className="font-normal text-brand-600 dark:text-brand-400">
                 Saving as Master Rule Template ({taxGroup})
               </span>
             )}
@@ -1603,7 +1603,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             <button
               type="button"
               onClick={handleCancel}
-              className="px-5 py-2 rounded-xl border border-light-border dark:border-dark-border text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-bg dark:hover:bg-dark-cardSecondary font-semibold transition-colors"
+              className="px-5 py-2 rounded-xl border border-light-border dark:border-dark-border text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-bg dark:hover:bg-dark-cardSecondary font-normal transition-colors"
             >
               Cancel
             </button>
@@ -1611,7 +1611,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
               type="submit"
               form="taxRuleForm"
               disabled={submitting || !taxGroup || !frequency || availableTaxGroups.length === 0}
-              className="px-6 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all disabled:opacity-50"
+              className="px-6 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-normal shadow-md shadow-brand-500/20 active:scale-95 transition-all disabled:opacity-50"
             >
               {submitting ? 'Saving...' : editingTax ? 'Update Tax Rule' : 'Save Tax'}
             </button>

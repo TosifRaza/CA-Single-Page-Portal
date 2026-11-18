@@ -114,16 +114,8 @@ export const WorkAssignmentPage: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Header with Breadcrumb matching screenshot */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-brand-500 mb-1 flex items-center gap-1.5">
-            <NavLink to="/dashboard" className="hover:underline flex items-center gap-0.5">
-              <span>«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Work Assignment</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Work Assignment
           </h1>
@@ -158,9 +150,9 @@ export const WorkAssignmentPage: React.FC = () => {
         </div>
       )}
 
-      <div className="space-y-6">
-        {/* Full-width assignment form */}
-        <div className="w-full p-5 sm:p-7 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark transition-colors">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+        {/* New Work Assignment */}
+        <div className="w-full xl:col-span-5 p-5 sm:p-7 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark transition-colors">
           <div className="flex items-center justify-between gap-4 border-b border-light-border dark:border-dark-border pb-4 mb-5">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-500/15 text-brand-500">
@@ -175,7 +167,7 @@ export const WorkAssignmentPage: React.FC = () => {
           </div>
 
           <form onSubmit={handleAssignWork} className="space-y-5 text-xs font-medium">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+            <div className="grid grid-cols-1 2xl:grid-cols-2 gap-x-6 gap-y-4">
             {/* Client Dropdown */}
             <div>
               <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
@@ -296,7 +288,7 @@ export const WorkAssignmentPage: React.FC = () => {
         </div>
 
         {/* Live Active Work Assignment List */}
-        <div className="w-full bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden flex flex-col justify-between">
+        <div className="w-full min-w-0 xl:col-span-7 bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden flex flex-col justify-between">
           <div>
             <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
               <div className="flex items-center gap-2">

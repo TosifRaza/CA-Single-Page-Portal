@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import { FileText, Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -73,13 +72,6 @@ export const DocumentMasterPage: React.FC = () => {
     <div className="space-y-5 animate-in fade-in duration-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-brand-500">
-            <NavLink to="/dashboard" className="flex items-center gap-0.5 hover:underline">
-              <span>Â«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Document Master</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Document Master
           </h1>

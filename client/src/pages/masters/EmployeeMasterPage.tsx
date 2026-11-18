@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
 import {
   Plus,
   Search,
@@ -302,13 +301,6 @@ export const EmployeeMasterPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-brand-500 mb-1 flex items-center gap-1.5">
-            <NavLink to="/dashboard" className="hover:underline flex items-center gap-0.5">
-              <span>«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Employee Master</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Employee Master
           </h1>
