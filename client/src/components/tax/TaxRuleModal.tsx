@@ -16,6 +16,7 @@ import {
   FolderTree,
   Building,
   Check,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -29,28 +30,167 @@ interface TaxRuleModalProps {
   defaultTaxGroup?: string;
 }
 
-interface MonthlyFilingPeriod {
+interface FilingPeriodScheduleItem {
   periodFrom: string;
   periodTo: string;
   filingDate: string;
   extendedDate: string;
+  submissionDate: string;
+  reconciliationDate: string;
 }
 
-const buildMonthlyFilingPeriods = (financialYear: string): MonthlyFilingPeriod[] => {
+const BUSINESS_CATEGORY_GROUPS = [
+  {
+    label: 'Individual & Family',
+    options: ['Individual', 'Sole Proprietorship', 'Hindu Undivided Family (HUF)'],
+  },
+  {
+    label: 'Partnership & Non-Corporate',
+    options: [
+      'Partnership Firm (Registered)',
+      'Partnership Firm (Unregistered)',
+      'Limited Liability Partnership (LLP)',
+      'Association of Persons (AOP)',
+      'Body of Individuals (BOI)',
+      'Joint Venture (JV)',
+      'Consortium',
+    ],
+  },
+  {
+    label: 'Companies',
+    options: [
+      'One Person Company (OPC)',
+      'Private Limited Company',
+      'Public Limited Company',
+      'Listed Public Company',
+      'Unlisted Public Company',
+      'Section 8 Company',
+      'Government Company',
+      'Foreign Company',
+      'Subsidiary Company',
+      'Holding Company',
+      'Producer Company',
+      'Nidhi Company',
+      'Dormant Company',
+    ],
+  },
+  {
+    label: 'Trust & Non-Profit Organizations',
+    options: [
+      'Private Trust',
+      'Public Trust',
+      'Charitable Trust',
+      'Religious Trust',
+      'Registered Society',
+      'NGO',
+      'Cooperative Society',
+      'Multi-State Cooperative Society',
+    ],
+  },
+  {
+    label: 'Government & Other Entities',
+    options: [
+      'Central Government Department',
+      'State Government Department',
+      'Local Authority',
+      'Municipal Corporation',
+      'Government Body',
+      'Public Sector Undertaking (PSU)',
+      'Statutory Corporation',
+      'Educational Institution',
+      'Religious Institution',
+      'Foreign LLP',
+      'Foreign Partnership Firm',
+      'Branch Office (Foreign Company)',
+      'Liaison Office',
+      'Project Office',
+    ],
+  },
+  {
+    label: 'Other',
+    options: [
+      'Artificial Juridical Person (AJP)',
+      'Unincorporated Association',
+      'Other Legal Entity',
+    ],
+  },
+];
+
+const getFilingPeriodLimit = (frequency: string): number => {
+  if (frequency === 'Monthly') return 12;
+  if (frequency === 'Quarterly') return 4;
+  if (frequency === 'Half-Yearly') return 2;
+  if (frequency === 'Custom') return 12;
+  return 1;
+};
+
+const formatScheduleDate = (value: string): string => {
+  if (!value) return '—';
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime())
+    ? '—'
+    : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const buildFilingPeriodSchedule = (
+  frequency: string,
+  financialYear: string
+): FilingPeriodScheduleItem[] => {
+  if (!frequency) return [];
   const startYear = Number(financialYear.match(/\d{4}/)?.[0]) || new Date().getFullYear();
+  const monthsPerPeriod =
+    frequency === 'Monthly' ? 1 : frequency === 'Quarterly' ? 3 : frequency === 'Half-Yearly' ? 6 : 12;
 
-  return Array.from({ length: 12 }, (_, index) => {
-    const monthIndex = (3 + index) % 12;
-    const year = startYear + (index >= 9 ? 1 : 0);
-    const month = String(monthIndex + 1).padStart(2, '0');
-    const lastDay = new Date(year, monthIndex + 1, 0).getDate();
-
-    return {
-      periodFrom: `${year}-${month}-01`,
-      periodTo: `${year}-${month}-${String(lastDay).padStart(2, '0')}`,
+  if (frequency === 'Custom') {
+    return [{
+      periodFrom: '',
+      periodTo: '',
       filingDate: '',
       extendedDate: '',
+      submissionDate: '',
+      reconciliationDate: '',
+    }];
+  }
+
+  return Array.from({ length: getFilingPeriodLimit(frequency) }, (_, index) => {
+    const startOffset = 3 + index * monthsPerPeriod;
+    const endOffset = startOffset + monthsPerPeriod - 1;
+    const startDateYear = startYear + Math.floor(startOffset / 12);
+    const startMonthIndex = startOffset % 12;
+    const endDateYear = startYear + Math.floor(endOffset / 12);
+    const endMonthIndex = endOffset % 12;
+    const fromMonth = String(startMonthIndex + 1).padStart(2, '0');
+    const toMonth = String(endMonthIndex + 1).padStart(2, '0');
+    const lastDay = new Date(endDateYear, endMonthIndex + 1, 0).getDate();
+
+    return {
+      periodFrom: `${startDateYear}-${fromMonth}-01`,
+      periodTo: `${endDateYear}-${toMonth}-${String(lastDay).padStart(2, '0')}`,
+      filingDate: '',
+      extendedDate: '',
+      submissionDate: '',
+      reconciliationDate: '',
     };
+  });
+};
+
+const savedScheduleHasChanges = (
+  schedule: FilingPeriodScheduleItem[],
+  frequency: string,
+  financialYear: string
+): boolean => {
+  const generatedSchedule = buildFilingPeriodSchedule(frequency, financialYear);
+  return schedule.some((period, index) => {
+    const generatedPeriod = generatedSchedule[index];
+    return (
+      !generatedPeriod ||
+      period.periodFrom !== generatedPeriod.periodFrom ||
+      period.periodTo !== generatedPeriod.periodTo ||
+      Boolean(period.filingDate) ||
+      Boolean(period.extendedDate) ||
+      Boolean(period.submissionDate) ||
+      Boolean(period.reconciliationDate)
+    );
   });
 };
 
@@ -74,7 +214,7 @@ const TAX_GROUP_CONFIG: Record<
 > = {
   GST: {
     defaultFrequency: 'Monthly',
-    allowedFrequencies: ['Monthly', 'Quarterly', 'Yearly', 'One Time'],
+    allowedFrequencies: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly', 'One Time'],
     defaultClientTypes: ['Individual', 'Business', 'Company', 'Partnership', 'LLP'],
     reconciliationTypes: [
       'GSTR-2B vs Purchase Register',
@@ -252,7 +392,7 @@ const TAX_GROUP_CONFIG: Record<
   },
   Other: {
     defaultFrequency: 'Monthly',
-    allowedFrequencies: ['Monthly', 'Quarterly', 'Yearly', 'One Time', 'Custom'],
+    allowedFrequencies: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly', 'One Time', 'Custom'],
     defaultClientTypes: ['Individual', 'Business', 'Company', 'Partnership', 'LLP', 'Trust', 'Other'],
     reconciliationTypes: ['Bank Reconciliation', 'Books vs Third-Party Statement', 'Custom Reconciliation'],
     suggestions: [
@@ -285,13 +425,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [taxGroup, setTaxGroup] = useState<string>('');
   const [taxName, setTaxName] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [frequency, setFrequency] = useState<string>('Monthly');
+  const [frequency, setFrequency] = useState<string>('');
   const [financialYear, setFinancialYear] = useState<string>('2026-27');
-  const [monthlyFilingPeriods, setMonthlyFilingPeriods] = useState<MonthlyFilingPeriod[]>(() =>
-    buildMonthlyFilingPeriods('2026-27').slice(0, 1)
-  );
-  const [remainingSavedMonthlyPeriods, setRemainingSavedMonthlyPeriods] = useState<MonthlyFilingPeriod[]>([]);
+  const [filingPeriodSchedule, setFilingPeriodSchedule] = useState<FilingPeriodScheduleItem[]>([]);
+  const [savedFilingPeriodFlags, setSavedFilingPeriodFlags] = useState<boolean[]>([]);
+  const [hasEditedFilingSchedule, setHasEditedFilingSchedule] = useState(false);
   const [applicableClientTypes, setApplicableClientTypes] = useState<string[]>([]);
+  const [otherBusinessCategory, setOtherBusinessCategory] = useState('');
   const [status, setStatus] = useState<string>('Active');
 
   // Section B: Timeline & Due Date
@@ -388,9 +528,20 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   // Handle Tax Group Change - strictly dynamic from Database Tax Group configuration
   const handleTaxGroupChange = (newGroup: string) => {
+    if (
+      newGroup !== taxGroup &&
+      hasEditedFilingSchedule &&
+      !window.confirm('Changing the Tax Group will clear the current filing schedule. Continue?')
+    ) {
+      return;
+    }
+
     setTaxGroup(newGroup);
-    setMonthlyFilingPeriods(buildMonthlyFilingPeriods(financialYear).slice(0, 1));
-    setRemainingSavedMonthlyPeriods([]);
+    setFrequency('');
+    setFilingPeriodSchedule([]);
+    setSavedFilingPeriodFlags([]);
+    setHasEditedFilingSchedule(false);
+    setOtherBusinessCategory('');
     setIsDirty(true);
     if (!newGroup) return;
 
@@ -401,7 +552,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     );
 
     if (matchedGroup) {
-      if (matchedGroup.defaultFrequency) setFrequency(matchedGroup.defaultFrequency);
       if (matchedGroup.applicableClientTypes && matchedGroup.applicableClientTypes.length > 0) {
         setApplicableClientTypes(matchedGroup.applicableClientTypes);
       }
@@ -426,6 +576,9 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     setTaxName(sug.name);
     setDescription(sug.desc);
     setFrequency(sug.freq);
+    setFilingPeriodSchedule(buildFilingPeriodSchedule(sug.freq, financialYear).slice(0, 1));
+    setSavedFilingPeriodFlags([false]);
+    setHasEditedFilingSchedule(false);
     setFilingPeriod(sug.periodDesc);
     if (sug.clientTypes) {
       setApplicableClientTypes(sug.clientTypes);
@@ -450,24 +603,44 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setTaxGroup(editingTax.taxGroup || 'GST');
       setTaxName(editingTax.taxName || '');
       setDescription(editingTax.description || '');
-      setFrequency(editingTax.frequency || editingTax.filingFrequency || 'Monthly');
-      setFinancialYear(editingTax.applicableFinancialYear || '2026-27');
+      const editingFrequency = editingTax.frequency || editingTax.filingFrequency || '';
+      const editingFinancialYear = editingTax.applicableFinancialYear || '2026-27';
+      setFrequency(editingFrequency);
+      setFinancialYear(editingFinancialYear);
       const savedSchedule = editingTax.filingSchedule?.map((period) => ({
         periodFrom: period.periodFrom?.slice(0, 10) || '',
         periodTo: period.periodTo?.slice(0, 10) || '',
         filingDate: period.filingDate?.slice(0, 10) || '',
         extendedDate: period.extendedDate?.slice(0, 10) || '',
+        submissionDate: period.submissionDate?.slice(0, 10) || '',
+        reconciliationDate: period.reconciliationDate?.slice(0, 10) || '',
       }));
-      setMonthlyFilingPeriods(
-        savedSchedule?.length
-          ? savedSchedule.slice(0, 1)
-          : buildMonthlyFilingPeriods(editingTax.applicableFinancialYear || '2026-27').slice(0, 1)
+      const generatedSchedule = buildFilingPeriodSchedule(editingFrequency, editingFinancialYear);
+      const mergedSchedule = savedSchedule?.length
+        ? savedSchedule.map((period, index) => ({
+            ...(generatedSchedule[index] || {
+              periodFrom: '',
+              periodTo: '',
+              filingDate: '',
+              extendedDate: '',
+              submissionDate: '',
+              reconciliationDate: '',
+            }),
+            ...period,
+          }))
+        : generatedSchedule.slice(0, 1);
+      setFilingPeriodSchedule(mergedSchedule);
+      setSavedFilingPeriodFlags(
+        mergedSchedule.map(() => Boolean(savedSchedule?.length))
       );
-      setRemainingSavedMonthlyPeriods(savedSchedule?.slice(1) || []);
+      setHasEditedFilingSchedule(
+        savedScheduleHasChanges(savedSchedule || [], editingFrequency, editingFinancialYear)
+      );
       setStatus(editingTax.status || 'Active');
       if (editingTax.applicableClientTypes) {
         setApplicableClientTypes(editingTax.applicableClientTypes);
       }
+      setOtherBusinessCategory(editingTax.applicableBusinessCategoryOther || '');
       if (editingTax.reconciliationRequired !== undefined) {
         setReconciliationRequired(editingTax.reconciliationRequired);
       }
@@ -523,12 +696,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setTaxGroup(initialGroup);
       setTaxName('');
       setDescription('');
-      setFrequency('Monthly');
+      setFrequency('');
       setFinancialYear('2026-27');
-      setMonthlyFilingPeriods(buildMonthlyFilingPeriods('2026-27').slice(0, 1));
-      setRemainingSavedMonthlyPeriods([]);
+      setFilingPeriodSchedule([]);
+      setSavedFilingPeriodFlags([]);
+      setHasEditedFilingSchedule(false);
       setStatus('Active');
       setApplicableClientTypes([]);
+      setOtherBusinessCategory('');
       setPeriodFrom('');
       setPeriodTo('');
       setFilingPeriod('');
@@ -552,29 +727,89 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   if (!isOpen) return null;
 
-  const clientTypesList = [
-    'Individual',
-    'Business',
-    'Company',
-    'Partnership',
-    'LLP',
-    'Trust',
-    'Other',
-  ];
   const reminderOptions = [30, 15, 7, 3, 1];
-
-  const toggleClientType = (type: string) => {
-    setIsDirty(true);
-    setApplicableClientTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
-  };
+  const selectedBusinessCategory = applicableClientTypes[0] || '';
+  const requiresCustomBusinessCategory =
+    selectedBusinessCategory === 'Other Legal Entity' || selectedBusinessCategory === 'Other';
+  const hasLegacyBusinessCategory =
+    selectedBusinessCategory &&
+    !BUSINESS_CATEGORY_GROUPS.some((group) => group.options.includes(selectedBusinessCategory));
 
   const toggleReminderDay = (day: number) => {
     setIsDirty(true);
     setReminderDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => b - a)
     );
+  };
+
+  const confirmScheduleRegeneration = (changedSetting: string): boolean => {
+    if (!hasEditedFilingSchedule) return true;
+    return window.confirm(
+      `Changing ${changedSetting} will replace the current filing schedule and its edited dates. Continue?`
+    );
+  };
+
+  const updateFilingPeriod = (
+    index: number,
+    field: keyof FilingPeriodScheduleItem,
+    value: string
+  ) => {
+    setFilingPeriodSchedule((periods) =>
+      periods.map((period, periodIndex) =>
+        periodIndex === index ? { ...period, [field]: value } : period
+      )
+    );
+    setSavedFilingPeriodFlags((flags) =>
+      flags.map((isSaved, periodIndex) => (periodIndex === index ? false : isSaved))
+    );
+    setHasEditedFilingSchedule(true);
+    setIsDirty(true);
+  };
+
+  const saveFilingPeriod = (index: number) => {
+    const period = filingPeriodSchedule[index];
+    if (!period?.periodFrom || !period.periodTo || !period.filingDate) {
+      toast.error('Enter Period From, Period To, and Filing Date before saving this period.');
+      return;
+    }
+
+    const fromDate = new Date(`${period.periodFrom}T00:00:00`);
+    const toDate = new Date(`${period.periodTo}T00:00:00`);
+    const filingDate = new Date(`${period.filingDate}T00:00:00`);
+    const extendedDate = period.extendedDate
+      ? new Date(`${period.extendedDate}T00:00:00`)
+      : null;
+
+    if (Number.isNaN(fromDate.getTime()) || Number.isNaN(toDate.getTime()) || fromDate >= toDate) {
+      toast.error('Period From must be earlier than Period To.');
+      return;
+    }
+    if (Number.isNaN(filingDate.getTime())) {
+      toast.error('Enter a valid Filing Date.');
+      return;
+    }
+    if (extendedDate && (Number.isNaN(extendedDate.getTime()) || extendedDate < filingDate)) {
+      toast.error('Extended Due Date must be on or after the Filing Date.');
+      return;
+    }
+
+    const overlapsAnotherPeriod = filingPeriodSchedule.some((otherPeriod, otherIndex) => {
+      if (otherIndex === index || !otherPeriod.periodFrom || !otherPeriod.periodTo) return false;
+      return (
+        period.periodFrom <= otherPeriod.periodTo &&
+        otherPeriod.periodFrom <= period.periodTo
+      );
+    });
+    if (overlapsAnotherPeriod) {
+      toast.error('Filing periods cannot overlap. Adjust the dates before saving this period.');
+      return;
+    }
+
+    setSavedFilingPeriodFlags((flags) =>
+      flags.map((isSaved, periodIndex) => (periodIndex === index ? true : isSaved))
+    );
+    setIsDirty(true);
+    toast.success('Period saved. You can add the next period.');
   };
 
   const handleCancel = () => {
@@ -600,30 +835,60 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       return;
     }
 
-    if (frequency === 'Monthly') {
-      const invalidPeriod = monthlyFilingPeriods.some(
-        (period) =>
-          !period.periodFrom ||
-          !period.periodTo ||
-          !period.filingDate ||
-          new Date(period.periodFrom) > new Date(period.periodTo) ||
-          (period.extendedDate && new Date(period.extendedDate) < new Date(period.filingDate))
-      );
-      if (invalidPeriod) {
-        toast.error('Check each monthly period, filing date, and any extended date.');
-        return;
-      }
-    } else if (periodFrom && periodTo && new Date(periodFrom) > new Date(periodTo)) {
-      toast.error('From Date cannot be later than To Date.');
+    if (!frequency) {
+      toast.error('Please select a filing frequency.');
       return;
     }
 
     if (
-      frequency !== 'Monthly' &&
-      hasExtension &&
-      (!extendedDueDate || !extensionReason || extensionReason.trim().length < 3)
+      savedFilingPeriodFlags.length !== filingPeriodSchedule.length ||
+      savedFilingPeriodFlags.some((isSaved) => !isSaved)
     ) {
-      toast.error('Please enter the extended date and a valid extension reason.');
+      toast.error('Save each filing period before saving the Tax Rule.');
+      return;
+    }
+
+    if (requiresCustomBusinessCategory && !otherBusinessCategory.trim()) {
+      toast.error('Please specify the other business category.');
+      return;
+    }
+
+    const invalidPeriod = filingPeriodSchedule.some((period) => {
+      const fromDate = new Date(`${period.periodFrom}T00:00:00`);
+      const toDate = new Date(`${period.periodTo}T00:00:00`);
+      const filingDate = period.filingDate ? new Date(`${period.filingDate}T00:00:00`) : null;
+      const extendedDate = period.extendedDate
+        ? new Date(`${period.extendedDate}T00:00:00`)
+        : null;
+      return (
+        !period.periodFrom ||
+        !period.periodTo ||
+        !period.filingDate ||
+        Number.isNaN(fromDate.getTime()) ||
+        Number.isNaN(toDate.getTime()) ||
+        fromDate >= toDate ||
+        (extendedDate &&
+          (Number.isNaN(extendedDate.getTime()) ||
+            !filingDate ||
+            extendedDate < filingDate))
+      );
+    });
+    if (filingPeriodSchedule.length === 0 || invalidPeriod) {
+      toast.error(
+        'Each period needs valid From and To dates, a Filing Date, and any Extended Due Date must be on or after the Filing Date.'
+      );
+      return;
+    }
+
+    const orderedPeriods = [...filingPeriodSchedule].sort((a, b) =>
+      a.periodFrom.localeCompare(b.periodFrom)
+    );
+    const hasOverlappingPeriods = orderedPeriods.some((period, index) => {
+      if (index === 0) return false;
+      return period.periodFrom <= orderedPeriods[index - 1].periodTo;
+    });
+    if (hasOverlappingPeriods) {
+      toast.error('Filing periods cannot overlap. Adjust the From and To dates before saving.');
       return;
     }
 
@@ -631,13 +896,9 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setSubmitting(true);
 
       // 1. Save or Update Reusable Tax Master Rule
-      const isMonthly = frequency === 'Monthly';
-      const completeMonthlySchedule = [
-        ...monthlyFilingPeriods,
-        ...remainingSavedMonthlyPeriods,
-      ];
-      const firstMonthlyPeriod = completeMonthlySchedule[0];
-      const lastMonthlyPeriod = completeMonthlySchedule[completeMonthlySchedule.length - 1];
+      const completeFilingSchedule = filingPeriodSchedule;
+      const firstFilingPeriod = completeFilingSchedule[0];
+      const lastFilingPeriod = completeFilingSchedule[completeFilingSchedule.length - 1];
       const taxRulePayload = {
         taxGroup,
         taxName,
@@ -645,31 +906,25 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         description: description || undefined,
         frequency,
         filingFrequency: frequency,
-        dueDateRule: isMonthly
-          ? 'Monthly Filing Schedule'
-          : originalDueDate
-          ? `Due on ${originalDueDate}`
-          : 'Statutory Due Date',
+        dueDateRule: firstFilingPeriod?.filingDate
+          ? `Due on ${firstFilingPeriod.filingDate}`
+          : `${frequency} Filing Schedule`,
         applicableFinancialYear: financialYear,
         applicableClientTypes,
-        periodFrom: isMonthly ? firstMonthlyPeriod?.periodFrom : periodFrom || undefined,
-        periodTo: isMonthly ? lastMonthlyPeriod?.periodTo : periodTo || undefined,
-        filingPeriod: isMonthly ? 'Monthly Schedule' : filingPeriod || undefined,
-        originalDueDate: isMonthly ? firstMonthlyPeriod?.filingDate : originalDueDate || undefined,
-        extendedDueDate: isMonthly
-          ? firstMonthlyPeriod?.extendedDate || null
-          : hasExtension && extendedDueDate
-          ? extendedDueDate
-          : null,
-        effectiveDueDate: isMonthly
-          ? firstMonthlyPeriod?.extendedDate || firstMonthlyPeriod?.filingDate || undefined
-          : effectiveDueDate || undefined,
-        filingSchedule: isMonthly
-          ? completeMonthlySchedule.map((period) => ({
-              ...period,
-              extendedDate: period.extendedDate || undefined,
-            }))
-          : undefined,
+        applicableBusinessCategoryOther: otherBusinessCategory.trim() || undefined,
+        periodFrom: firstFilingPeriod?.periodFrom || undefined,
+        periodTo: lastFilingPeriod?.periodTo || undefined,
+        filingPeriod: `${frequency} Schedule`,
+        originalDueDate: firstFilingPeriod?.filingDate || undefined,
+        extendedDueDate: firstFilingPeriod?.extendedDate || null,
+        effectiveDueDate:
+          firstFilingPeriod?.extendedDate || firstFilingPeriod?.filingDate || undefined,
+        filingSchedule: completeFilingSchedule.map((period) => ({
+          ...period,
+          extendedDate: period.extendedDate || undefined,
+          submissionDate: period.submissionDate || undefined,
+          reconciliationDate: period.reconciliationDate || undefined,
+        })),
         actualSubmissionDate: selectedClientId ? actualSubmissionDate || null : null,
         submissionDate: selectedClientId ? actualSubmissionDate || null : null,
         submissionMethod: selectedClientId ? submissionMethod : undefined,
@@ -754,7 +1009,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl max-w-5xl w-full flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl max-w-7xl w-full flex flex-col max-h-[92vh] overflow-hidden">
         {/* Sticky Header */}
         <div className="sticky top-0 bg-white dark:bg-dark-card px-6 py-4 border-b border-light-border dark:border-dark-border flex items-center justify-between z-10">
           <div>
@@ -850,7 +1105,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   {/* Tax Name */}
                   <div className="sm:col-span-2">
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Tax / Form Name *
+                  Tax Name *
                 </label>
                 <input
                   type="text"
@@ -875,8 +1130,96 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                 />
               </div>
 
+              {/* Applicable Business Category */}
+              <div className="sm:col-span-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                    Applicable Business Category
+                  </label>
+                  {taxGroup === 'ROC' && (
+                    <span className="text-[12px] text-amber-600 dark:text-amber-400 font-semibold">
+                      (ROC applies strictly to Companies & LLPs)
+                    </span>
+                  )}
+                </div>
+                <select
+                  value={selectedBusinessCategory}
+                  onChange={(e) => {
+                    const category = e.target.value;
+                    setApplicableClientTypes(category ? [category] : []);
+                    if (category !== 'Other Legal Entity' && category !== 'Other') {
+                      setOtherBusinessCategory('');
+                    }
+                    setIsDirty(true);
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-medium"
+                >
+                  <option value="">-- Select Business Category --</option>
+                  {hasLegacyBusinessCategory && (
+                    <optgroup label="Previously Saved Category">
+                      <option value={selectedBusinessCategory}>{selectedBusinessCategory}</option>
+                    </optgroup>
+                  )}
+                  {BUSINESS_CATEGORY_GROUPS.map((group) => (
+                    <optgroup key={group.label} label={group.label}>
+                      {group.options.map((category) => {
+                        const isRestrictedForRoc =
+                          taxGroup === 'ROC' &&
+                          group.label !== 'Companies' &&
+                          category !== 'Limited Liability Partnership (LLP)';
+
+                        return (
+                          <option
+                            key={category}
+                            value={category}
+                            disabled={isRestrictedForRoc}
+                          >
+                            {category}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  ))}
+                </select>
+                {requiresCustomBusinessCategory && (
+                  <div className="mt-3">
+                    <label className="mb-1 block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                      Specify Business Category *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={otherBusinessCategory}
+                      onChange={(e) => {
+                        setOtherBusinessCategory(e.target.value);
+                        setIsDirty(true);
+                      }}
+                      placeholder="Enter the business category"
+                      className="w-full rounded-xl border border-light-border bg-light-bg px-3.5 py-2.5 font-medium text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Description / Regulatory Instructions */}
+              <div className="space-y-3 sm:col-span-2">
+                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                  Description
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Statutory filing notes or rules for article staff..."
+                  value={description}
+                  onChange={(e) => {
+                    setDescription(e.target.value);
+                    setIsDirty(true);
+                  }}
+                  className="w-full px-3.5 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 resize-none font-medium"
+                />
+              </div>
+
               {/* Filing Frequency - Logically filtered by Tax Group! */}
-              <div>
+              <div className="sm:col-start-1">
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Filing Frequency *
                 </label>
@@ -884,38 +1227,54 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                   required
                   value={frequency}
                   onChange={(e) => {
-                    setFrequency(e.target.value);
+                    const nextFrequency = e.target.value;
+                    if (
+                      nextFrequency !== frequency &&
+                      !confirmScheduleRegeneration('Filing Frequency')
+                    ) {
+                      return;
+                    }
+                    setFrequency(nextFrequency);
+                    setFilingPeriodSchedule(
+                      buildFilingPeriodSchedule(nextFrequency, financialYear).slice(0, 1)
+                    );
+                    setSavedFilingPeriodFlags(nextFrequency ? [false] : []);
+                    setHasEditedFilingSchedule(false);
                     setIsDirty(true);
                   }}
                   className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                 >
+                  <option value="">-- Select Filing Frequency --</option>
                   {currentConfig.allowedFrequencies.map((f) => (
                     <option key={f} value={f}>
                       {f}
                     </option>
                   ))}
                 </select>
-                <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
-                  {taxGroup === 'Income Tax'
-                    ? 'Income Tax returns are filed annually'
-                    : taxGroup === 'TDS' || taxGroup === 'TCS'
-                    ? 'TDS/TCS returns are filed quarterly'
-                    : 'Standard statutory cycle'}
-                </span>
               </div>
 
               {/* Financial Year */}
-              <div>
+              <div className="sm:col-start-2">
                 <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                   Financial Year
                 </label>
                 <select
                   value={financialYear}
                   onChange={(e) => {
-                    setFinancialYear(e.target.value);
-                    if (frequency === 'Monthly') {
-                      setMonthlyFilingPeriods(buildMonthlyFilingPeriods(e.target.value).slice(0, 1));
-                      setRemainingSavedMonthlyPeriods([]);
+                    const nextFinancialYear = e.target.value;
+                    if (
+                      nextFinancialYear !== financialYear &&
+                      !confirmScheduleRegeneration('Financial Year')
+                    ) {
+                      return;
+                    }
+                    setFinancialYear(nextFinancialYear);
+                    if (frequency) {
+                      setFilingPeriodSchedule(
+                        buildFilingPeriodSchedule(frequency, nextFinancialYear).slice(0, 1)
+                      );
+                      setSavedFilingPeriodFlags([false]);
+                      setHasEditedFilingSchedule(false);
                     }
                     setIsDirty(true);
                   }}
@@ -938,368 +1297,282 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
               </div>
             </div>
 
-            {/* Applicable Client Types - Logically Restricted for ROC/Corporate! */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
-                  Applicable Business / Client Types
-                </label>
-                {taxGroup === 'ROC' && (
-                  <span className="text-[12px] text-amber-600 dark:text-amber-400 font-semibold">
-                    (ROC applies strictly to Companies & LLPs)
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {clientTypesList.map((type) => {
-                  const selected = applicableClientTypes.includes(type);
-                  const isRestricted =
-                    taxGroup === 'ROC' && type !== 'Company' && type !== 'LLP';
-
-                  return (
-                    <button
-                      key={type}
-                      type="button"
-                      disabled={isRestricted}
-                      onClick={() => toggleClientType(type)}
-                      className={`px-3 py-1 rounded-lg text-[13px] font-semibold border transition-all ${
-                        selected
-                          ? 'bg-brand-500 text-white border-brand-500 shadow-sm'
-                          : isRestricted
-                          ? 'opacity-30 cursor-not-allowed bg-light-bg dark:bg-dark-bg text-light-textMuted border-dashed'
-                          : 'bg-light-bg dark:bg-dark-bg text-light-textSecondary dark:text-dark-textSecondary border-light-border dark:border-dark-border hover:border-brand-500/50'
-                      }`}
-                    >
-                      {type}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                Description / Regulatory Instructions
-              </label>
-              <textarea
-                rows={2}
-                placeholder="Statutory filing notes or rules for article staff..."
-                value={description}
-                onChange={(e) => {
-                  setDescription(e.target.value);
-                  setIsDirty(true);
-                }}
-                className="w-full px-3.5 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 resize-none font-medium"
-              />
-            </div>
           </div>
 
-          {/* SECTION B: TIMELINE & STATUTORY DUE DATE */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 pb-2 border-b border-light-border/60 dark:border-dark-border/60">
-              <span className="w-2 h-2 rounded-full bg-status-orange" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-light-textPrimary dark:text-dark-textPrimary">
-                Section B: Timeline & Due Date
-              </h3>
-            </div>
+          {frequency && (
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2 pb-2 border-b border-light-border/60 dark:border-dark-border/60">
+                <span className="w-2 h-2 rounded-full bg-status-orange" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-light-textPrimary dark:text-dark-textPrimary">
+                  Section B: Timeline & Due Date
+                </h3>
+              </div>
 
-            {frequency === 'Monthly' ? (
               <div className="space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <h4 className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
-                      Monthly Filing Schedule
-                    </h4>
-                    <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-0.5">
-                      Select period dates, filing dates, and any extended dates for each month.
-                    </p>
+                {filingPeriodSchedule.some((_, index) => savedFilingPeriodFlags[index]) && (
+                  <div className="overflow-x-auto rounded-xl border border-light-border dark:border-dark-border">
+                    <table className="w-full min-w-[1120px] text-left text-xs">
+                      <thead className="bg-light-bg/70 dark:bg-dark-bg/70 text-light-textMuted dark:text-dark-textMuted">
+                        <tr>
+                          <th className="px-3 py-2.5 font-semibold">Period</th>
+                          <th className="px-3 py-2.5 font-semibold">Period From</th>
+                          <th className="px-3 py-2.5 font-semibold">Period To</th>
+                          <th className="px-3 py-2.5 font-semibold">Filing Date</th>
+                          <th className="px-3 py-2.5 font-semibold">Submission Date</th>
+                          <th className="px-3 py-2.5 font-semibold">Reconciliation Date</th>
+                          <th className="px-3 py-2.5 font-semibold">Extended Due Date</th>
+                          <th className="px-3 py-2.5 text-right font-semibold">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-light-border dark:divide-dark-border">
+                        {filingPeriodSchedule.map((period, index) => {
+                          if (!savedFilingPeriodFlags[index]) return null;
+                          const periodTitle =
+                            frequency === 'Monthly' && period.periodFrom
+                              ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
+                                  month: 'long',
+                                  year: 'numeric',
+                                })
+                              : `Period ${index + 1}`;
+
+                          return (
+                            <tr key={index} className="bg-white dark:bg-dark-card">
+                              <td className="whitespace-nowrap px-3 py-2.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                                {periodTitle}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {formatScheduleDate(period.periodFrom)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {formatScheduleDate(period.periodTo)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textPrimary dark:text-dark-textPrimary">
+                                {formatScheduleDate(period.filingDate)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {formatScheduleDate(period.submissionDate)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {formatScheduleDate(period.reconciliationDate)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {formatScheduleDate(period.extendedDate)}
+                              </td>
+                              <td className="whitespace-nowrap px-3 py-2 text-right">
+                                <div className="inline-flex items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSavedFilingPeriodFlags((flags) =>
+                                        flags.map((isSaved, periodIndex) =>
+                                          periodIndex === index ? false : isSaved
+                                        )
+                                      );
+                                      setIsDirty(true);
+                                    }}
+                                    className="rounded-md px-2 py-1 font-semibold text-brand-600 hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                                  >
+                                    Edit
+                                  </button>
+                                  {index > 0 && index === filingPeriodSchedule.length - 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setFilingPeriodSchedule((periods) =>
+                                          periods.filter((_, periodIndex) => periodIndex !== index)
+                                        );
+                                        setSavedFilingPeriodFlags((flags) => flags.slice(0, -1));
+                                        setHasEditedFilingSchedule(true);
+                                        setIsDirty(true);
+                                      }}
+                                      className="rounded-md px-2 py-1 font-semibold text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-500/10"
+                                    >
+                                      Remove
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
-                  <button
-                    type="button"
-                    disabled={monthlyFilingPeriods.length >= 12}
-                    onClick={() => {
-                      if (remainingSavedMonthlyPeriods.length > 0) {
-                        setMonthlyFilingPeriods((periods) => [
-                          ...periods,
-                          remainingSavedMonthlyPeriods[0],
-                        ]);
-                        setRemainingSavedMonthlyPeriods((periods) => periods.slice(1));
-                      } else {
-                        setMonthlyFilingPeriods((periods) => {
-                          const nextPeriod = buildMonthlyFilingPeriods(financialYear)[periods.length];
-                          return nextPeriod ? [...periods, nextPeriod] : periods;
-                        });
-                      }
-                      setIsDirty(true);
-                    }}
-                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add More
-                  </button>
-                </div>
+                )}
 
                 <div className="space-y-3">
-                  {monthlyFilingPeriods.map((period, index) => (
+                  {filingPeriodSchedule.map((period, index) => (
+                    savedFilingPeriodFlags[index] ? null : (
                     <div
                       key={index}
-                      className="p-3 rounded-xl bg-light-bg/50 dark:bg-dark-bg/50 border border-light-border dark:border-dark-border"
+                      className="p-2.5 rounded-xl bg-light-bg/50 dark:bg-dark-bg/50 border border-light-border dark:border-dark-border"
                     >
-                      <h5 className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary mb-2">
-                        {period.periodFrom
-                          ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
-                              month: 'long',
-                              year: 'numeric',
-                            })
-                          : `Additional Period ${index - 11}`}
-                      </h5>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                      <div className="flex items-center justify-between gap-3 mb-2">
+                        <h5 className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                          {period.periodFrom && period.periodTo
+                            ? frequency === 'Monthly'
+                              ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
+                                  month: 'long',
+                                  year: 'numeric',
+                                })
+                              : `Period ${index + 1} (${period.periodFrom} to ${period.periodTo})`
+                          : `Period ${index + 1}`}
+                        </h5>
+                        {index > 0 && index === filingPeriodSchedule.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFilingPeriodSchedule((periods) =>
+                                periods.filter((_, periodIndex) => periodIndex !== index)
+                              );
+                              setSavedFilingPeriodFlags((flags) => flags.slice(0, -1));
+                              setHasEditedFilingSchedule(true);
+                              setIsDirty(true);
+                            }}
+                            aria-label={`Remove filing period ${index + 1}`}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2">
                         <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                            From Date *
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Period From *
                           </label>
                           <input
                             type="date"
                             required
                             value={period.periodFrom}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMonthlyFilingPeriods((periods) =>
-                                periods.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, periodFrom: value } : item
-                                )
-                              );
-                              setIsDirty(true);
-                            }}
-                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            onChange={(e) => updateFilingPeriod(index, 'periodFrom', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                            To Date *
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Period To *
                           </label>
                           <input
                             type="date"
                             required
                             value={period.periodTo}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMonthlyFilingPeriods((periods) =>
-                                periods.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, periodTo: value } : item
-                                )
-                              );
-                              setIsDirty(true);
-                            }}
-                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            min={period.periodFrom || undefined}
+                            onChange={(e) => updateFilingPeriod(index, 'periodTo', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Filing Date *
                           </label>
                           <input
                             type="date"
                             required
                             value={period.filingDate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMonthlyFilingPeriods((periods) =>
-                                periods.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, filingDate: value } : item
-                                )
-                              );
-                              setIsDirty(true);
-                            }}
-                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            onChange={(e) => updateFilingPeriod(index, 'filingDate', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
                         </div>
                         <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                            Extended Date
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Submission Date
+                          </label>
+                          <input
+                            type="date"
+                            value={period.submissionDate}
+                            onChange={(e) => updateFilingPeriod(index, 'submissionDate', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Reconciliation Date
+                          </label>
+                          <input
+                            type="date"
+                            value={period.reconciliationDate}
+                            onChange={(e) => updateFilingPeriod(index, 'reconciliationDate', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                            Extended Due Date
                           </label>
                           <input
                             type="date"
                             value={period.extendedDate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setMonthlyFilingPeriods((periods) =>
-                                periods.map((item, itemIndex) =>
-                                  itemIndex === index ? { ...item, extendedDate: value } : item
-                                )
-                              );
-                              setIsDirty(true);
-                            }}
-                            className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            onChange={(e) => updateFilingPeriod(index, 'extendedDate', e.target.value)}
+                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
                         </div>
                       </div>
+                      <div className="mt-2 flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => saveFilingPeriod(index)}
+                          disabled={savedFilingPeriodFlags[index]}
+                          className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors disabled:cursor-default ${
+                            savedFilingPeriodFlags[index]
+                              ? 'border border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
+                              : 'bg-brand-600 text-white shadow-sm hover:bg-brand-700'
+                          }`}
+                        >
+                          {savedFilingPeriodFlags[index] ? (
+                            <>
+                              <Check className="h-3.5 w-3.5" />
+                              Saved
+                            </>
+                          ) : (
+                            'Save Period'
+                          )}
+                        </button>
+                      </div>
                     </div>
+                    )
                   ))}
                 </div>
-              </div>
-            ) : (
-              <>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Reporting Period From *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={periodFrom}
-                  onChange={(e) => {
-                    setPeriodFrom(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Reporting Period To *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={periodTo}
-                  onChange={(e) => {
-                    setPeriodTo(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Filing / Assessment Label
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Nov 2026, Q3, FY 2026-27"
-                  value={filingPeriod}
-                  onChange={(e) => {
-                    setFilingPeriod(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                  Original Statutory Due Date *
-                </label>
-                <input
-                  type="date"
-                  required
-                  value={originalDueDate}
-                  onChange={(e) => {
-                    setOriginalDueDate(e.target.value);
-                    setIsDirty(true);
-                  }}
-                  className="w-full px-3 py-2 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                />
-              </div>
-
-              {/* Govt Deadline Extension Toggle (Clean & Uncluttered!) */}
-              <div className="flex flex-col justify-end">
-                <label className="flex items-center gap-2 cursor-pointer pb-2">
-                  <input
-                    type="checkbox"
-                    checked={hasExtension}
-                    onChange={(e) => {
-                      setHasExtension(e.target.checked);
-                      if (!e.target.checked) setExtendedDueDate('');
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    disabled={
+                      filingPeriodSchedule.length >= getFilingPeriodLimit(frequency) ||
+                      savedFilingPeriodFlags.length !== filingPeriodSchedule.length ||
+                      savedFilingPeriodFlags.some((isSaved) => !isSaved)
+                    }
+                    onClick={() => {
+                      setFilingPeriodSchedule((periods) => {
+                        const generatedPeriod = buildFilingPeriodSchedule(
+                          frequency,
+                          financialYear
+                        )[periods.length];
+                        return [
+                          ...periods,
+                          generatedPeriod || {
+                            periodFrom: '',
+                            periodTo: '',
+                            filingDate: '',
+                            extendedDate: '',
+                            submissionDate: '',
+                            reconciliationDate: '',
+                          },
+                        ];
+                      });
+                      setSavedFilingPeriodFlags((flags) => [...flags, false]);
+                      setHasEditedFilingSchedule(true);
                       setIsDirty(true);
                     }}
-                    className="w-4 h-4 text-brand-500 rounded border-light-border"
-                  />
-                  <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
-                    Statutory Deadline Extended by Govt?
-                  </span>
-                </label>
-              </div>
-            </div>
-
-            {/* Extended Due Date & Circular Reference (Only shown if Govt extended!) */}
-            {hasExtension && (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 animate-in fade-in duration-200">
-                <div>
-                  <label className="block font-semibold mb-1 text-amber-900 dark:text-amber-200">
-                    Extended Due Date *
-                  </label>
-                  <input
-                    type="date"
-                    required={hasExtension}
-                    value={extendedDueDate}
-                    onChange={(e) => {
-                      setExtendedDueDate(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-1 text-amber-900 dark:text-amber-200">
-                    Extension Reason *
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Portal glitch / Floods / Notification"
-                    value={extensionReason}
-                    onChange={(e) => {
-                      setExtensionReason(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold mb-1 text-amber-900 dark:text-amber-200">
-                    Govt Notification No.
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Notif No. 42/2026-CT"
-                    value={extensionReference}
-                    onChange={(e) => {
-                      setExtensionReference(e.target.value);
-                      setIsDirty(true);
-                    }}
-                    className="w-full px-3 py-1.5 rounded-xl bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-                  />
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-500/15 border border-brand-200 dark:border-brand-500/30 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/25 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add More Filing Schedule
+                  </button>
                 </div>
               </div>
-            )}
-
-            {/* Calculated Due Date Pill */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border">
-              <span className="text-light-textSecondary dark:text-dark-textSecondary font-semibold">
-                Effective Due Date (Calculated):
-              </span>
-              <span className="font-extrabold text-brand-500 text-xs px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-brand-500/20 border border-brand-200 dark:border-brand-500/30">
-                {effectiveDueDate
-                  ? new Date(effectiveDueDate).toLocaleDateString('en-GB', {
-                      day: '2-digit',
-                      month: 'short',
-                      year: 'numeric',
-                    })
-                  : 'Not set'}
-              </span>
             </div>
-              </>
-            )}
-          </div>
-
+          )}
               </>
             )}
         </form>
@@ -1310,6 +1583,10 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             {!taxGroup ? (
               <span className="font-semibold text-amber-600 dark:text-amber-400">
                 Please select a tax group first
+              </span>
+            ) : !frequency ? (
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                Please select a filing frequency
               </span>
             ) : selectedClientId ? (
               <span className="font-semibold text-purple-600 dark:text-purple-400">
@@ -1333,7 +1610,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             <button
               type="submit"
               form="taxRuleForm"
-              disabled={submitting || !taxGroup || availableTaxGroups.length === 0}
+              disabled={submitting || !taxGroup || !frequency || availableTaxGroups.length === 0}
               className="px-6 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold shadow-md shadow-brand-500/20 active:scale-95 transition-all disabled:opacity-50"
             >
               {submitting ? 'Saving...' : editingTax ? 'Update Tax Rule' : 'Save Tax'}

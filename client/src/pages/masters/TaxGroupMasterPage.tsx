@@ -131,22 +131,11 @@ export const TaxGroupMasterPage: React.FC = () => {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Header with Breadcrumbs */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-brand-500 mb-1 flex items-center gap-1.5">
-            <NavLink to="/dashboard" className="hover:underline flex items-center gap-0.5">
-              <span>«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Tax Group Master</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Tax Group Master
           </h1>
-          <p className="text-xs sm:text-sm text-light-textSecondary dark:text-dark-textSecondary font-medium">
-            Define and manage statutory tax categories and compliance groups
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5">

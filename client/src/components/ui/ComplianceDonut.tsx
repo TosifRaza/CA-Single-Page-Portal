@@ -66,10 +66,10 @@ export const ComplianceDonut: React.FC<ComplianceDonutProps> = ({
 
           {/* Center Label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-2xl font-extrabold text-light-textPrimary dark:text-dark-textPrimary tracking-tight">
+            <span className="text-2xl font-extrabold text-light-textPrimary dark:text-dark-textPrimary tracking-tight leading-none">
               {completedPercent}%
             </span>
-            <span className="text-[13px] font-semibold text-status-green">
+            <span className="w-[84px] max-w-full px-1 text-center text-[11px] leading-tight font-semibold text-status-green break-words">
               {label}
             </span>
           </div>

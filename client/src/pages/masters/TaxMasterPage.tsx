@@ -14,10 +14,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Calendar,
-  Layers,
-  FileCheck,
   Building,
-  Tags,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -28,12 +25,12 @@ import { ReconciliationModal } from '../../components/tax/ReconciliationModal';
 
 export const TaxMasterPage: React.FC = () => {
   // Main View: 'rules' or 'filings'
-  const [mainView, setMainView] = useState<'rules' | 'filings'>('rules');
+  const [mainView] = useState<'rules' | 'filings'>('rules');
 
   // --- Tax Rules State ---
   const [taxes, setTaxes] = useState<TaxMasterItem[]>([]);
   const [loadingTaxes, setLoadingTaxes] = useState(true);
-  const [activeTab, setActiveTab] = useState('All Taxes');
+  const [activeTab] = useState('All Taxes');
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('All Groups');
   const [statusFilter, setStatusFilter] = useState('Active');
@@ -54,6 +51,10 @@ export const TaxMasterPage: React.FC = () => {
   // --- Modals State ---
   const [isTaxRuleModalOpen, setIsTaxRuleModalOpen] = useState(false);
   const [editingTax, setEditingTax] = useState<TaxMasterItem | null>(null);
+  const [selectedTaxSchedule, setSelectedTaxSchedule] = useState<TaxMasterItem | null>(null);
+  const [scheduleClientFilings, setScheduleClientFilings] = useState<TaxFilingItem[]>([]);
+  const [loadingScheduleClientFilings, setLoadingScheduleClientFilings] = useState(false);
+  const [scheduleClientFilingsError, setScheduleClientFilingsError] = useState('');
 
   const [selectedFilingForExtension, setSelectedFilingForExtension] = useState<TaxFilingItem | null>(null);
   const [selectedFilingForRecon, setSelectedFilingForRecon] = useState<TaxFilingItem | null>(null);
@@ -86,11 +87,6 @@ export const TaxMasterPage: React.FC = () => {
   // Only show groups that exist in Tax Group Master
   const activeGroupNames = dynamicTaxGroups;
 
-  const tabs = [
-    'All Taxes',
-    ...Array.from(new Set(activeGroupNames.filter((g) => g !== 'Other' && g !== 'Others'))),
-    ...(activeGroupNames.some((g) => g === 'Other' || g === 'Others') ? ['Others'] : []),
-  ];
   const groups = ['All Groups', ...Array.from(new Set(activeGroupNames))];
   const statuses = ['All Statuses', 'Active', 'Inactive', 'Archived'];
 
@@ -195,6 +191,43 @@ export const TaxMasterPage: React.FC = () => {
     setIsTaxRuleModalOpen(true);
   };
 
+  const openTaxSchedule = async (tax: TaxMasterItem) => {
+    setSelectedTaxSchedule(tax);
+    setScheduleClientFilings([]);
+    setScheduleClientFilingsError('');
+    setLoadingScheduleClientFilings(true);
+
+    try {
+      const firstPage = await api.get('/tax-filings', {
+        params: { taxRuleId: tax._id, page: 1, limit: 100 },
+      });
+      const firstData = firstPage.data?.data;
+      const pages = firstData?.pagination?.pages || 1;
+      const allFilings: TaxFilingItem[] = firstData?.filings || [];
+
+      if (pages > 1) {
+        const remainingPages = await Promise.all(
+          Array.from({ length: pages - 1 }, (_, index) =>
+            api.get('/tax-filings', {
+              params: { taxRuleId: tax._id, page: index + 2, limit: 100 },
+            })
+          )
+        );
+        remainingPages.forEach((response) => {
+          allFilings.push(...(response.data?.data?.filings || []));
+        });
+      }
+
+      setScheduleClientFilings(allFilings);
+    } catch (err: any) {
+      setScheduleClientFilingsError(
+        err.response?.data?.message || 'Could not load client submission and reconciliation dates.'
+      );
+    } finally {
+      setLoadingScheduleClientFilings(false);
+    }
+  };
+
   const handleQuickStatusChange = async (filingId: string, newStatus: string) => {
     try {
       await api.patch(`/tax-filings/${filingId}/status`, {
@@ -217,62 +250,32 @@ export const TaxMasterPage: React.FC = () => {
     });
   };
 
+  const selectedTaxScheduleRows = selectedTaxSchedule
+    ? selectedTaxSchedule.filingSchedule?.length
+      ? selectedTaxSchedule.filingSchedule
+      : selectedTaxSchedule.periodFrom ||
+          selectedTaxSchedule.periodTo ||
+          selectedTaxSchedule.originalDueDate
+        ? [
+            {
+              periodFrom: selectedTaxSchedule.periodFrom || '',
+              periodTo: selectedTaxSchedule.periodTo || '',
+              filingDate: selectedTaxSchedule.originalDueDate || '',
+              extendedDate: selectedTaxSchedule.extendedDueDate,
+            },
+          ]
+        : []
+    : [];
+
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Header with Breadcrumb matching screenshot */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-brand-500 mb-1 flex items-center gap-1.5">
-            <NavLink to="/dashboard" className="hover:underline flex items-center gap-0.5">
-              <span>«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Tax Master</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Tax Master & Compliance
           </h1>
-          <p className="text-xs sm:text-sm text-light-textSecondary dark:text-dark-textSecondary font-medium">
-            Manage tax rules, statutory deadlines, client filings & reconciliations
-          </p>
         </div>
-
         <div className="flex flex-wrap items-center gap-3 self-start sm:self-auto">
-          {/* View Switcher: Tax Rules vs Tax Filings */}
-          <div className="flex items-center gap-1 p-1 bg-light-bg dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl">
-            <button
-              onClick={() => setMainView('rules')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                mainView === 'rules'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-light-textSecondary dark:text-dark-textSecondary hover:text-light-textPrimary'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Tax Rules</span>
-            </button>
-            <button
-              onClick={() => setMainView('filings')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                mainView === 'filings'
-                  ? 'bg-brand-500 text-white shadow-sm'
-                  : 'text-light-textSecondary dark:text-dark-textSecondary hover:text-light-textPrimary'
-              }`}
-            >
-              <FileCheck className="w-3.5 h-3.5" />
-              <span>Client Filings ({filingTotalCount})</span>
-            </button>
-          </div>
-
-          <NavLink
-            to="/masters/tax-groups"
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-light-border dark:border-dark-border bg-white dark:bg-dark-card hover:bg-light-bg dark:hover:bg-dark-cardSecondary text-light-textPrimary dark:text-dark-textPrimary text-xs font-semibold shadow-sm transition-all"
-            title="Configure statutory tax groups & compliance categories"
-          >
-            <Tags className="w-3.5 h-3.5 text-brand-500" />
-            <span>Manage Tax Groups</span>
-          </NavLink>
-
           <button
             onClick={() => {
               if (dynamicTaxGroups.length === 0) {
@@ -323,26 +326,6 @@ export const TaxMasterPage: React.FC = () => {
       {/* VIEW 1: TAX RULES (MASTER CONFIGURATION) matching Screenshot */}
       {mainView === 'rules' && (
         <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden transition-all">
-          {/* Filter Tabs matching Screenshot */}
-          <div className="flex items-center gap-6 px-6 pt-4 border-b border-light-border dark:border-dark-border overflow-x-auto text-xs font-semibold">
-            {tabs.map((tab) => (
-              <button
-                key={tab}
-                onClick={() => {
-                  setActiveTab(tab);
-                  setPage(1);
-                }}
-                className={`pb-3 border-b-2 transition-all whitespace-nowrap ${
-                  activeTab === tab
-                    ? 'border-brand-500 text-brand-500 font-bold'
-                    : 'border-transparent text-light-textSecondary dark:text-dark-textSecondary hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-                }`}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
           {/* Filter Controls Bar */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-light-border/60 dark:border-dark-border/60 bg-light-bg/30 dark:bg-dark-cardSecondary/30">
             <div className="relative w-full sm:w-72">
@@ -395,12 +378,7 @@ export const TaxMasterPage: React.FC = () => {
                   <th className="py-3 px-3.5 font-semibold">Tax Name</th>
                   <th className="py-3 px-3.5 font-semibold">Description</th>
                   <th className="py-3 px-3.5 font-semibold">Frequency</th>
-                  <th className="py-3 px-3.5 font-semibold">From Date</th>
-                  <th className="py-3 px-3.5 font-semibold">To Date</th>
-                  <th className="py-3 px-3.5 font-semibold">Due Date</th>
-                  <th className="py-3 px-3.5 font-semibold">Submission Date</th>
-                  <th className="py-3 px-3.5 font-semibold">Reconciliation</th>
-                  <th className="py-3 px-3.5 font-semibold">Priority</th>
+                  <th className="py-3 px-3.5 font-semibold">Filing Dates</th>
                   <th className="py-3 px-3.5 font-semibold">Status</th>
                   <th className="py-3 px-3.5 font-semibold text-right">Action</th>
                 </tr>
@@ -408,22 +386,20 @@ export const TaxMasterPage: React.FC = () => {
               <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
                 {loadingTaxes ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-light-textMuted dark:text-dark-textMuted font-medium">
+                    <td colSpan={8} className="py-12 text-center text-light-textMuted dark:text-dark-textMuted font-medium">
                       Loading tax rules...
                     </td>
                   </tr>
                 ) : taxes.length === 0 ? (
                   <tr>
-                    <td colSpan={11} className="py-12 text-center text-light-textMuted dark:text-dark-textMuted font-medium">
+                    <td colSpan={8} className="py-12 text-center text-light-textMuted dark:text-dark-textMuted font-medium">
                       No tax rules found. Click "+ Add Tax Rule" to create one.
                     </td>
                   </tr>
                 ) : (
                   taxes.map((tax) => {
-                    const displayDueDate = tax.effectiveDueDate
-                      ? formatDate(tax.effectiveDueDate)
-                      : (tax.dueDateRule || '—');
-                    const submissionDate = tax.actualSubmissionDate || tax.submissionDate;
+                    const scheduleCount = tax.filingSchedule?.length ||
+                      (tax.periodFrom || tax.periodTo || tax.originalDueDate ? 1 : 0);
 
                   return (
                     <tr
@@ -463,49 +439,16 @@ export const TaxMasterPage: React.FC = () => {
                       <td className="py-3 px-3.5 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                         {tax.frequency || tax.filingFrequency || 'Monthly'}
                       </td>
-                      <td className="py-3 px-3.5 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
-                        {formatDate(tax.periodFrom)}
-                      </td>
-                      <td className="py-3 px-3.5 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
-                        {formatDate(tax.periodTo)}
-                      </td>
-                      <td className="py-3 px-3.5 font-medium text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
-                        {displayDueDate}
-                      </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
-                        {submissionDate ? (
-                          <span className="text-light-textSecondary dark:text-dark-textSecondary font-medium">
-                            {formatDate(submissionDate)}
-                          </span>
-                        ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted">—</span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        {tax.reconciliationRequired ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold bg-brand-50 dark:bg-brand-500/20 text-brand-600 dark:text-blue-400">
-                            <RefreshCw className="w-2.5 h-2.5" /> Required
-                          </span>
-                        ) : (
-                          <span className="text-light-textMuted dark:text-dark-textMuted text-[13px]">
-                            Optional
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2 py-0.5 rounded-md text-[12px] font-bold ${
-                            tax.priority === 'Critical'
-                              ? 'bg-status-red/15 text-status-red'
-                              : tax.priority === 'High'
-                              ? 'bg-status-orange/15 text-status-orange'
-                              : tax.priority === 'Low'
-                              ? 'bg-light-border dark:bg-dark-border text-light-textMuted'
-                              : 'bg-brand-50 dark:bg-brand-500/15 text-brand-500'
-                          }`}
+                        <button
+                          type="button"
+                          onClick={() => openTaxSchedule(tax)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
                         >
-                          {tax.priority || 'Medium'}
-                        </span>
+                          <Calendar className="w-3.5 h-3.5" />
+                          Show Dates
+                          <span className="text-[11px] opacity-75">({scheduleCount})</span>
+                        </button>
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <span
@@ -835,6 +778,176 @@ export const TaxMasterPage: React.FC = () => {
                 className="p-1.5 rounded-lg border border-light-border dark:border-dark-border hover:bg-light-bg dark:hover:bg-dark-cardSecondary disabled:opacity-40"
               >
                 <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedTaxSchedule && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 sm:p-5">
+          <div className="flex max-h-[90vh] w-full max-w-7xl flex-col overflow-hidden rounded-2xl border border-light-border bg-white shadow-2xl dark:border-dark-border dark:bg-dark-card">
+            <div className="flex items-start justify-between gap-4 border-b border-light-border px-5 py-4 dark:border-dark-border sm:px-6">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-300">
+                  <Calendar className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                    Filing Schedule Dates
+                  </h2>
+                  <p className="mt-0.5 text-xs font-medium text-light-textSecondary dark:text-dark-textSecondary">
+                    {selectedTaxSchedule.taxName} ·{' '}
+                    {selectedTaxSchedule.frequency || selectedTaxSchedule.filingFrequency || 'Monthly'}
+                    {selectedTaxSchedule.applicableFinancialYear
+                      ? ` · FY ${selectedTaxSchedule.applicableFinancialYear}`
+                      : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTaxSchedule(null)}
+                aria-label="Close filing schedule dates"
+                className="rounded-lg p-1.5 text-light-textMuted transition-colors hover:bg-light-bg hover:text-light-textPrimary dark:hover:bg-dark-cardSecondary dark:hover:text-dark-textPrimary"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 sm:p-6">
+              {selectedTaxScheduleRows.length > 0 ? (
+                <div className="overflow-x-auto rounded-xl border border-light-border dark:border-dark-border">
+                  <table className="w-full min-w-[1280px] text-left text-sm">
+                    <thead className="bg-light-bg/60 text-xs font-bold text-light-textSecondary dark:bg-dark-cardSecondary/60 dark:text-dark-textSecondary">
+                      <tr>
+                        <th className="px-4 py-3">Period</th>
+                        <th className="px-4 py-3">Reporting Period</th>
+                        <th className="px-4 py-3">Filing Date</th>
+                        <th className="px-4 py-3">Submission Date</th>
+                        <th className="px-4 py-3">Reconciliation Date</th>
+                        <th className="px-4 py-3">Extended Due Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-light-border/70 dark:divide-dark-border/70">
+                      {selectedTaxScheduleRows.map((period, index) => {
+                        const periodFrom = period.periodFrom
+                          ? formatDate(period.periodFrom)
+                          : '—';
+                        const periodTo = period.periodTo ? formatDate(period.periodTo) : '—';
+                        const isMonthly =
+                          (selectedTaxSchedule.frequency || selectedTaxSchedule.filingFrequency) ===
+                          'Monthly';
+                        const periodLabel =
+                          isMonthly && period.periodFrom
+                            ? new Date(`${period.periodFrom.slice(0, 10)}T00:00:00`).toLocaleDateString(
+                                'en-IN',
+                                { month: 'long', year: 'numeric' }
+                              )
+                            : `Period ${index + 1}`;
+                        const periodClientFilings = scheduleClientFilings.filter(
+                          (filing) =>
+                            filing.periodFrom?.slice(0, 10) === period.periodFrom?.slice(0, 10) &&
+                            filing.periodTo?.slice(0, 10) === period.periodTo?.slice(0, 10)
+                        );
+                        const periodReconciliations = periodClientFilings.filter(
+                          (filing) => filing.reconciliationRequired
+                        );
+
+                        return (
+                          <tr
+                            key={`${period.periodFrom}-${period.periodTo}-${index}`}
+                            className="text-light-textPrimary dark:text-dark-textPrimary"
+                          >
+                            <td className="whitespace-nowrap px-4 py-3 font-semibold">{periodLabel}</td>
+                            <td className="whitespace-nowrap px-4 py-3">{periodFrom} – {periodTo}</td>
+                            <td className="whitespace-nowrap px-4 py-3 font-medium">
+                              {period.filingDate ? formatDate(period.filingDate) : 'Not set'}
+                            </td>
+
+                            <td className="px-4 py-3 text-xs">
+                              {period.submissionDate ? (
+                                <span className="font-medium">{formatDate(period.submissionDate)}</span>
+                              ) : loadingScheduleClientFilings ? (
+                                <span className="text-light-textMuted dark:text-dark-textMuted">Loading...</span>
+                              ) : scheduleClientFilingsError ? (
+                                <span className="text-status-red">Unavailable</span>
+                              ) : periodClientFilings.length > 0 ? (
+                                <div className="max-h-20 min-w-[190px] space-y-1 overflow-y-auto">
+                                  {periodClientFilings.map((filing) => (
+                                    <div key={filing._id} className="whitespace-nowrap">
+                                      <span className="font-semibold">
+                                        {filing.clientId?.businessName || filing.clientId?.name || 'Client'}:
+                                      </span>{' '}
+                                      {filing.actualSubmissionDate
+                                        ? formatDate(filing.actualSubmissionDate)
+                                        : 'Not submitted'}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-light-textMuted dark:text-dark-textMuted">—</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-xs">
+                              {period.reconciliationDate ? (
+                                <span className="font-medium">{formatDate(period.reconciliationDate)}</span>
+                              ) : loadingScheduleClientFilings ? (
+                                <span className="text-light-textMuted dark:text-dark-textMuted">Loading...</span>
+                              ) : scheduleClientFilingsError ? (
+                                <span className="text-status-red">Unavailable</span>
+                              ) : periodReconciliations.length > 0 ? (
+                                <div className="max-h-20 min-w-[250px] space-y-1 overflow-y-auto">
+                                  {periodReconciliations.map((filing) => (
+                                    <div key={filing._id} className="whitespace-nowrap">
+                                      <span className="font-semibold">
+                                        {filing.clientId?.businessName || filing.clientId?.name || 'Client'}:
+                                      </span>{' '}
+                                      Start {filing.reconciliationStartDate
+                                        ? formatDate(filing.reconciliationStartDate)
+                                        : '—'}
+                                      {' · '}Complete {filing.reconciliationCompletionDate
+                                        ? formatDate(filing.reconciliationCompletionDate)
+                                        : '—'}
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-light-textMuted dark:text-dark-textMuted">—</span>
+                              )}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-3 text-light-textSecondary dark:text-dark-textSecondary">
+                              {period.extendedDate ? formatDate(period.extendedDate) : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-light-border px-5 py-12 text-center dark:border-dark-border">
+                  <Calendar className="mx-auto mb-3 h-8 w-8 text-light-textMuted dark:text-dark-textMuted" />
+                  <p className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                    No filing dates configured yet
+                  </p>
+                  <p className="mt-1 text-sm text-light-textSecondary dark:text-dark-textSecondary">
+                    Edit this tax rule to add its filing schedule.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between border-t border-light-border px-5 py-3 dark:border-dark-border sm:px-6">
+              <span className="text-xs font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+                {selectedTaxScheduleRows.length} filing period{selectedTaxScheduleRows.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSelectedTaxSchedule(null)}
+                className="rounded-xl border border-light-border px-4 py-2 text-sm font-semibold text-light-textPrimary hover:bg-light-bg dark:border-dark-border dark:text-dark-textPrimary dark:hover:bg-dark-cardSecondary"
+              >
+                Close
               </button>
             </div>
           </div>

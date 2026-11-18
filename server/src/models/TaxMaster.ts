@@ -17,6 +17,7 @@ export interface ITaxMaster extends Document {
   dueDateRule: string;
   applicableFinancialYear?: string;
   applicableClientTypes?: string[];
+  applicableBusinessCategoryOther?: string;
   periodFrom?: Date;
   periodTo?: Date;
   filingPeriod?: string;
@@ -36,6 +37,8 @@ export interface ITaxMaster extends Document {
     periodTo: Date;
     filingDate: Date;
     extendedDate?: Date;
+    submissionDate?: Date;
+    reconciliationDate?: Date;
   }[];
   reminderSettings?: {
     enabled: boolean;
@@ -73,6 +76,7 @@ const TaxMasterSchema = new Schema<ITaxMaster>(
     dueDateRule: { type: String, required: true, trim: true },
     applicableFinancialYear: { type: String },
     applicableClientTypes: [{ type: String }],
+    applicableBusinessCategoryOther: { type: String, trim: true },
     periodFrom: { type: Date },
     periodTo: { type: Date },
     filingPeriod: { type: String, trim: true },
@@ -93,6 +97,8 @@ const TaxMasterSchema = new Schema<ITaxMaster>(
         periodTo: { type: Date, required: true },
         filingDate: { type: Date, required: true },
         extendedDate: { type: Date },
+        submissionDate: { type: Date },
+        reconciliationDate: { type: Date },
       },
     ],
     reminderSettings: {

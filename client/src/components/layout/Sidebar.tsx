@@ -172,6 +172,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </NavLink>
 
                 <NavLink
+                  to="/masters/documents"
+                  onClick={onClose}
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${
+                    isActive('/masters/documents')
+                      ? 'bg-brand-500 text-white font-semibold shadow-sm'
+                      : 'text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-border/40 dark:hover:bg-dark-card hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
+                  }`}
+                >
+                  <FolderLock className="w-4 h-4" />
+                  <span>Document Master</span>
+                </NavLink>
+
+                <NavLink
                   to="/masters/work-assignment"
                   onClick={onClose}
                   className={`flex items-center gap-2.5 px-3 py-2 rounded-lg transition-all ${

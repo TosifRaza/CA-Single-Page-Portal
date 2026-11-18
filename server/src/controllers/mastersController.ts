@@ -151,8 +151,26 @@ export const getDocumentCategories = async (req: Request, res: Response, next: N
 export const createDocumentCategory = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const organizationId = req.user!.organizationId;
-    const category = await DocumentCategory.create({ ...req.body, organizationId });
-    res.status(201).json({ success: true, message: 'Document category created', data: category });
+    const name = String(req.body.name || '').trim();
+    if (!name) {
+      res.status(400).json({ success: false, message: 'Document name is required' });
+      return;
+    }
+
+    const code = String(req.body.code || name)
+      .normalize('NFKD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toUpperCase() || 'DOCUMENT';
+    const duplicate = await DocumentCategory.findOne({ organizationId, code });
+    if (duplicate) {
+      res.status(409).json({ success: false, message: 'This document name already exists' });
+      return;
+    }
+
+    const category = await DocumentCategory.create({ name, code, organizationId });
+    res.status(201).json({ success: true, message: 'Document name created', data: category });
   } catch (error) {
     next(error);
   }

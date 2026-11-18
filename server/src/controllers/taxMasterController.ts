@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { TaxMaster } from '../models/TaxMaster.js';
 import { TaxGroup } from '../models/TaxGroup.js';
 import { ActivityLog } from '../models/Operations.js';
-import { taxMasterSchema } from '../validators/index.js';
+import { taxMasterSchema, taxMasterUpdateSchema } from '../validators/index.js';
 
 export const getTaxes = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -127,10 +127,11 @@ export const updateTax = async (req: Request, res: Response, next: NextFunction)
   try {
     const { id } = req.params;
     const organizationId = req.user!.organizationId;
+    const validated = taxMasterUpdateSchema.parse(req.body);
 
     const tax = await TaxMaster.findOneAndUpdate(
       { _id: id, organizationId },
-      req.body,
+      validated,
       { new: true, runValidators: true }
     );
 

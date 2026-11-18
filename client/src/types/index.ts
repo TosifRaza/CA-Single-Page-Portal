@@ -52,6 +52,7 @@ export interface TaxMasterItem {
   description?: string;
   applicableFinancialYear?: string;
   applicableClientTypes?: string[];
+  applicableBusinessCategoryOther?: string;
   periodFrom?: string;
   periodTo?: string;
   filingPeriod?: string;
@@ -71,6 +72,8 @@ export interface TaxMasterItem {
     periodTo: string;
     filingDate: string;
     extendedDate?: string;
+    submissionDate?: string;
+    reconciliationDate?: string;
   }[];
   reminderSettings?: {
     enabled: boolean;
@@ -143,6 +146,11 @@ export interface WorkMasterItem {
   defaultPriority: 'Low' | 'Medium' | 'High' | 'Urgent';
   defaultChecklist?: string[];
   defaultDocuments?: string[];
+  defaultDocumentFiles?: Array<{
+    documentName: string;
+    documentId: string;
+    fileName: string;
+  }>;
   status: 'Active' | 'Inactive' | 'Archived';
   createdAt: string;
   totalAssignmentsCount?: number;

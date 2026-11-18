@@ -62,7 +62,7 @@ export const taxGroupSchema = z.object({
   status: z.enum(['active', 'inactive']).default('active').optional(),
 });
 
-export const taxMasterSchema = z.object({
+const taxMasterFieldsSchema = z.object({
   taxGroup: z.string().min(2, 'Tax group is required'),
   taxName: z.string().min(2, 'Tax name is required'),
   taxCode: z.string().optional(),
@@ -72,6 +72,7 @@ export const taxMasterSchema = z.object({
   description: z.string().optional(),
   applicableFinancialYear: z.string().optional(),
   applicableClientTypes: z.array(z.string()).optional(),
+  applicableBusinessCategoryOther: z.string().optional(),
   periodFrom: z.string().optional().nullable(),
   periodTo: z.string().optional().nullable(),
   filingPeriod: z.string().optional(),
@@ -93,6 +94,8 @@ export const taxMasterSchema = z.object({
         periodTo: z.string().min(1),
         filingDate: z.string().min(1),
         extendedDate: z.string().optional().nullable(),
+        submissionDate: z.string().optional().nullable(),
+        reconciliationDate: z.string().optional().nullable(),
       })
     )
     .optional(),
@@ -105,6 +108,140 @@ export const taxMasterSchema = z.object({
   priority: z.enum(['Low', 'Medium', 'High', 'Critical']).default('Medium').optional(),
   status: z.enum(['Active', 'Inactive', 'Archived']).default('Active'),
 });
+
+type TaxMasterScheduleValidationInput = {
+  applicableClientTypes?: string[];
+  applicableBusinessCategoryOther?: string | null;
+  filingSchedule?: {
+    periodFrom: string;
+    periodTo: string;
+    filingDate: string;
+    extendedDate?: string | null;
+    submissionDate?: string | null;
+    reconciliationDate?: string | null;
+  }[];
+};
+
+const isValidCalendarDate = (value: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const validateTaxMasterSchedule = (
+  data: TaxMasterScheduleValidationInput,
+  context: z.RefinementCtx
+) => {
+  if (
+    data.applicableClientTypes?.includes('Other Legal Entity') &&
+    !data.applicableBusinessCategoryOther?.trim()
+  ) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['applicableBusinessCategoryOther'],
+      message: 'Please specify the other business category',
+    });
+  }
+
+  const schedule = data.filingSchedule;
+  if (!schedule) return;
+
+  const validRanges: { index: number; from: number; to: number }[] = [];
+  schedule.forEach((period, index) => {
+    const fromValid = isValidCalendarDate(period.periodFrom);
+    const toValid = isValidCalendarDate(period.periodTo);
+    const filingDateValid = isValidCalendarDate(period.filingDate);
+    const extendedDateValid = !period.extendedDate || isValidCalendarDate(period.extendedDate);
+    const submissionDateValid = !period.submissionDate || isValidCalendarDate(period.submissionDate);
+    const reconciliationDateValid =
+      !period.reconciliationDate || isValidCalendarDate(period.reconciliationDate);
+
+    if (!fromValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'periodFrom'],
+        message: 'Period From must be a valid calendar date',
+      });
+    }
+    if (!toValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'periodTo'],
+        message: 'Period To must be a valid calendar date',
+      });
+    }
+    if (!filingDateValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'filingDate'],
+        message: 'Filing Date must be a valid calendar date',
+      });
+    }
+    if (!extendedDateValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'extendedDate'],
+        message: 'Extended Due Date must be a valid calendar date',
+      });
+    }
+    if (!submissionDateValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'submissionDate'],
+        message: 'Submission Date must be a valid calendar date',
+      });
+    }
+    if (!reconciliationDateValid) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'reconciliationDate'],
+        message: 'Reconciliation Date must be a valid calendar date',
+      });
+    }
+    if (
+      extendedDateValid &&
+      filingDateValid &&
+      period.extendedDate &&
+      period.extendedDate < period.filingDate
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'extendedDate'],
+        message: 'Extended Due Date must be on or after the Filing Date',
+      });
+    }
+
+    if (fromValid && toValid) {
+      const from = Date.parse(`${period.periodFrom}T00:00:00.000Z`);
+      const to = Date.parse(`${period.periodTo}T00:00:00.000Z`);
+      if (from >= to) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['filingSchedule', index, 'periodTo'],
+          message: 'Period From must be earlier than Period To',
+        });
+      } else {
+        validRanges.push({ index, from, to });
+      }
+    }
+  });
+
+  validRanges.sort((a, b) => a.from - b.from);
+  validRanges.forEach((range, index) => {
+    if (index > 0 && range.from <= validRanges[index - 1].to) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', range.index, 'periodFrom'],
+        message: 'Filing periods cannot overlap',
+      });
+    }
+  });
+};
+
+export const taxMasterSchema = taxMasterFieldsSchema.superRefine(validateTaxMasterSchedule);
+export const taxMasterUpdateSchema = taxMasterFieldsSchema
+  .partial()
+  .superRefine(validateTaxMasterSchedule);
 
 export const taxFilingSchema = z.object({
   taxRuleId: z.string().min(1, 'Tax Rule is required'),
@@ -203,6 +340,11 @@ export const workMasterSchema = z.object({
   defaultPriority: z.enum(['Low', 'Medium', 'High', 'Urgent']).default('Medium'),
   defaultChecklist: z.array(z.string()).optional(),
   defaultDocuments: z.array(z.string()).optional(),
+  defaultDocumentFiles: z.array(z.object({
+    documentName: z.string().min(1),
+    documentId: z.string().min(1),
+    fileName: z.string().min(1),
+  })).optional(),
   status: z.enum(['Active', 'Inactive', 'Archived']).default('Active'),
 });
 

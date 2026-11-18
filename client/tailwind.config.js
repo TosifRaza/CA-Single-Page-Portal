@@ -57,6 +57,17 @@ export default {
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
+      // Keep the visual hierarchy clear without making every label feel bold.
+      // Most existing `font-semibold` text becomes medium, while headings and
+      // primary actions retain a restrained semibold weight.
+      fontWeight: {
+        normal: '400',
+        medium: '500',
+        semibold: '500',
+        bold: '600',
+        extrabold: '700',
+        black: '800',
+      },
       fontSize: {
         xs: ['14px', { lineHeight: '20px' }],
         sm: ['16px', { lineHeight: '24px' }],

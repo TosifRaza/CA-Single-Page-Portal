@@ -13,8 +13,8 @@ import {
   Calendar,
   CheckCircle2,
   Tag,
-  RefreshCw,
   PlusCircle,
+  Upload,
   FileText,
   AlertCircle,
   Users,
@@ -25,11 +25,13 @@ import {
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { WorkMasterItem, TaxMasterItem } from '../../types';
+import { useAuth } from '../../context/AuthContext';
 
 export const WorkMasterPage: React.FC = () => {
+  const { user } = useAuth();
+  const canDeleteAssignments = ['Super Admin', 'CA Admin'].includes(user?.role || '');
   const [works, setWorks] = useState<WorkMasterItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('All Works');
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All Categories');
   const [statusFilter, setStatusFilter] = useState('Active');
@@ -40,6 +42,10 @@ export const WorkMasterPage: React.FC = () => {
   // Available Tax Masters for dropdown
   const [availableTaxes, setAvailableTaxes] = useState<TaxMasterItem[]>([]);
   const [loadingTaxes, setLoadingTaxes] = useState(false);
+  const [availableDocuments, setAvailableDocuments] = useState<{ _id: string; name: string }[]>([]);
+  const [documentToAdd, setDocumentToAdd] = useState('');
+  const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
+  const [uploadingRequiredDocument, setUploadingRequiredDocument] = useState(false);
 
   // Assignments Modal State (View employees assigned to this work)
   const [selectedWorkForAssignments, setSelectedWorkForAssignments] = useState<WorkMasterItem | null>(null);
@@ -95,6 +101,25 @@ export const WorkMasterPage: React.FC = () => {
       toast.error('Could not load assigned team');
     } finally {
       setLoadingWorkAssignments(false);
+    }
+  };
+
+  const handleDeleteWorkAssignment = async (assignmentId: string, workCode: string) => {
+    if (!selectedWorkForAssignments || !canDeleteAssignments) return;
+    if (!window.confirm(`Delete assignment ${workCode}? This cannot be undone.`)) return;
+
+    try {
+      await api.delete(`/work-assignments/${assignmentId}`);
+      const response = await api.get(
+        `/work-masters/${selectedWorkForAssignments._id}/assignments`
+      );
+      setWorkAssignmentsList(response.data?.data || []);
+      setEmployeeSummaries(response.data?.employeeSummary || []);
+      setTotalWorkAssignmentsCount(response.data?.totalAssignments || 0);
+      toast.success(`Assignment ${workCode} deleted.`);
+      fetchWorks();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Could not delete this assignment');
     }
   };
 
@@ -166,10 +191,11 @@ export const WorkMasterPage: React.FC = () => {
       'Obtain client review & sign-off approval',
       'Final submission on portal & ARN generation',
     ] as string[],
+    defaultDocuments: [] as string[],
+    defaultDocumentFiles: [] as { documentName: string; documentId: string; fileName: string }[],
     status: 'Active' as 'Active' | 'Inactive' | 'Archived',
   });
 
-  const tabs = ['All Works', 'Tax Related', 'Compliance', 'Advisory', 'Others'];
   const categories = ['All Categories', 'GST', 'Income Tax', 'TDS', 'Compliance', 'Advisory', 'Others'];
   const statuses = ['All', 'Active', 'Inactive'];
 
@@ -188,11 +214,20 @@ export const WorkMasterPage: React.FC = () => {
     }
   };
 
+  const fetchAvailableDocuments = async () => {
+    try {
+      const res = await api.get('/document-categories');
+      setAvailableDocuments(res.data?.data || []);
+    } catch (err) {
+      console.error('Error fetching required document names:', err);
+      toast.error('Could not load Document Master names');
+    }
+  };
+
   const fetchWorks = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      if (activeTab !== 'All Works') params.append('tab', activeTab);
       if (categoryFilter !== 'All Categories') params.append('category', categoryFilter);
       if (statusFilter !== 'All') params.append('status', statusFilter);
       if (search) params.append('search', search);
@@ -215,15 +250,36 @@ export const WorkMasterPage: React.FC = () => {
   useEffect(() => {
     fetchWorks();
     fetchAvailableTaxes();
-  }, [activeTab, categoryFilter, statusFilter, search, page]);
+  }, [categoryFilter, statusFilter, search, page]);
 
   // Selected Tax details object
   const selectedTax = availableTaxes.find((t) => t._id === formData.taxId);
+  const selectedTaxScheduleRows = selectedTax?.filingSchedule?.length
+    ? selectedTax.filingSchedule
+    : selectedTax &&
+        (selectedTax.periodFrom || selectedTax.periodTo || selectedTax.originalDueDate)
+      ? [
+          {
+            periodFrom: selectedTax.periodFrom || '',
+            periodTo: selectedTax.periodTo || '',
+            filingDate: selectedTax.originalDueDate || '',
+            extendedDate: selectedTax.extendedDueDate,
+            submissionDate: selectedTax.submissionDate,
+            reconciliationDate: selectedTax.reconciliationDate,
+          },
+        ]
+      : [];
   const selectedWorkTax =
     selectedWorkForAssignments &&
     (typeof selectedWorkForAssignments.taxId === 'object' && selectedWorkForAssignments.taxId
       ? (selectedWorkForAssignments.taxId as any)
       : availableTaxes.find((t) => t._id === selectedWorkForAssignments?.taxId));
+  const selectedWorkRequiredDocuments = Array.from(
+    new Set([
+      ...(selectedWorkForAssignments?.defaultDocuments || []),
+      ...(selectedWorkForAssignments?.defaultDocumentFiles || []).map((file) => file.documentName),
+    ])
+  );
 
   // When user selects a Tax Name
   const handleTaxSelect = (taxId: string) => {
@@ -274,9 +330,95 @@ export const WorkMasterPage: React.FC = () => {
     }));
   };
 
+  const handleRemoveRequiredDocument = (documentName: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      defaultDocuments: prev.defaultDocuments.filter((name) => name !== documentName),
+      defaultDocumentFiles: prev.defaultDocumentFiles.filter(
+        (file) => file.documentName !== documentName
+      ),
+    }));
+  };
+
+  const handleUploadRequiredDocument = async () => {
+    const selectedDocument = availableDocuments.find((document) => document.name === documentToAdd);
+    if (!selectedDocument || !selectedDocumentFile) {
+      toast.error('Select a document name and choose a file to upload.');
+      return;
+    }
+
+    const uploadPayload = new FormData();
+    uploadPayload.append('file', selectedDocumentFile);
+    uploadPayload.append('categoryId', selectedDocument._id);
+    uploadPayload.append('description', `Work Master required document: ${selectedDocument.name}`);
+
+    try {
+      setUploadingRequiredDocument(true);
+      const response = await api.post('/documents/upload', uploadPayload, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      const uploadedFile = response.data?.data;
+      if (!uploadedFile?._id) {
+        throw new Error('Upload response did not include a document record.');
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        defaultDocuments: prev.defaultDocuments.includes(selectedDocument.name)
+          ? prev.defaultDocuments
+          : [...prev.defaultDocuments, selectedDocument.name],
+        defaultDocumentFiles: [
+          ...prev.defaultDocumentFiles.filter(
+            (file) => file.documentName !== selectedDocument.name
+          ),
+          {
+            documentName: selectedDocument.name,
+            documentId: uploadedFile._id,
+            fileName: uploadedFile.originalName || selectedDocumentFile.name,
+          },
+        ],
+      }));
+      setDocumentToAdd('');
+      setSelectedDocumentFile(null);
+      toast.success(`${selectedDocument.name} uploaded and added to this work.`);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || 'Document upload failed');
+    } finally {
+      setUploadingRequiredDocument(false);
+    }
+  };
+
+  const handleOpenRequiredDocument = async (file: {
+    documentName: string;
+    documentId: string;
+    fileName: string;
+  }) => {
+    const previewWindow = window.open('', '_blank');
+    try {
+      const response = await api.get(`/documents/${file.documentId}/download`, {
+        responseType: 'blob',
+      });
+      const fileUrl = URL.createObjectURL(response.data);
+      if (previewWindow) {
+        previewWindow.location.href = fileUrl;
+      } else {
+        const link = window.document.createElement('a');
+        link.href = fileUrl;
+        link.download = file.fileName || file.documentName;
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(fileUrl), 60_000);
+    } catch (error: any) {
+      previewWindow?.close();
+      toast.error(error.response?.data?.message || 'Could not open this document');
+    }
+  };
+
   const openCreateModal = () => {
     setEditingWork(null);
     setNewChecklistItem('');
+    setDocumentToAdd('');
+    setSelectedDocumentFile(null);
     setFormData({
       workName: '',
       taxId: '',
@@ -291,15 +433,20 @@ export const WorkMasterPage: React.FC = () => {
         'Obtain client review & sign-off approval',
         'Final submission on portal & ARN generation',
       ],
+      defaultDocuments: [],
+      defaultDocumentFiles: [],
       status: 'Active',
     });
     fetchAvailableTaxes();
+    fetchAvailableDocuments();
     setIsModalOpen(true);
   };
 
   const openEditModal = (work: WorkMasterItem) => {
     setEditingWork(work);
     setNewChecklistItem('');
+    setDocumentToAdd('');
+    setSelectedDocumentFile(null);
     const matchedTaxId =
       typeof work.taxId === 'object' && work.taxId?._id
         ? work.taxId._id
@@ -324,9 +471,12 @@ export const WorkMasterPage: React.FC = () => {
               'Obtain client review & sign-off approval',
               'Final submission on portal & ARN generation',
             ],
+      defaultDocuments: work.defaultDocuments || [],
+      defaultDocumentFiles: work.defaultDocumentFiles || [],
       status: work.status || 'Active',
     });
     fetchAvailableTaxes();
+    fetchAvailableDocuments();
     setIsModalOpen(true);
   };
 
@@ -386,22 +536,11 @@ export const WorkMasterPage: React.FC = () => {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
-      {/* Header with Breadcrumb */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold text-brand-500 mb-1 flex items-center gap-1.5">
-            <NavLink to="/dashboard" className="hover:underline flex items-center gap-0.5">
-              <span>«</span> Master Management
-            </NavLink>
-            <span className="text-light-textMuted dark:text-dark-textMuted">&gt;</span>
-            <span className="text-light-textPrimary dark:text-dark-textPrimary">Work Master</span>
-          </div>
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Work Master
           </h1>
-          <p className="text-xs sm:text-sm text-light-textSecondary dark:text-dark-textSecondary font-medium">
-            Define compliance works & standardize statutory task templates linked to Tax Master
-          </p>
         </div>
 
         <button
@@ -452,26 +591,6 @@ export const WorkMasterPage: React.FC = () => {
 
       {/* Main Content Card */}
       <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden">
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-6 px-6 pt-4 border-b border-light-border dark:border-dark-border overflow-x-auto text-xs font-semibold">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setActiveTab(tab);
-                setPage(1);
-              }}
-              className={`pb-3 border-b-2 transition-all whitespace-nowrap ${
-                activeTab === tab
-                  ? 'border-brand-500 text-brand-500 font-bold'
-                  : 'border-transparent text-light-textSecondary dark:text-dark-textSecondary hover:text-light-textPrimary dark:hover:text-dark-textPrimary'
-              }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
         {/* Filter Controls Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 border-b border-light-border/60 dark:border-dark-border/60 bg-light-bg/30 dark:bg-dark-cardSecondary/30">
           <div className="relative w-full sm:w-72">
@@ -718,8 +837,8 @@ export const WorkMasterPage: React.FC = () => {
 
       {/* Add / Edit Work Modal (Step 1: 2 Fields -> Step 2: Full Tax Details Expand) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl max-h-[90vh] flex flex-col bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-7xl max-h-[94vh] flex flex-col bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40">
               <div>
@@ -740,7 +859,7 @@ export const WorkMasterPage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <form id="workMasterForm" onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-5 text-xs">
+            <form id="workMasterForm" onSubmit={handleSubmit} className="flex-1 min-h-0 p-5 sm:p-6 overflow-y-auto space-y-5 text-xs">
               {/* Warning if no taxes configured in Tax Master */}
               {availableTaxes.length === 0 && !loadingTaxes && (
                 <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 flex items-start gap-3">
@@ -861,51 +980,62 @@ export const WorkMasterPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Details Grid */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[13px]">
-                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
-                            Due Date Rule
+                      {/* Compact Filing Schedule Dates */}
+                      <div className="rounded-lg border border-blue-100 dark:border-blue-500/20 bg-white/70 dark:bg-dark-bg/40 p-2">
+                        <div className="mb-1.5 flex items-center justify-between gap-2">
+                          <span className="text-[12px] font-bold text-blue-900 dark:text-blue-300">
+                            Filing Schedule Dates
                           </span>
-                          <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block">
-                            {selectedTax.dueDateRule || 'Standard cycle'}
+                          <span className="text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
+                            {selectedTaxScheduleRows.length} period{selectedTaxScheduleRows.length === 1 ? '' : 's'}
                           </span>
                         </div>
+                        {selectedTaxScheduleRows.length > 0 ? (
+                          <div className="overflow-x-auto rounded-md border border-blue-100/80 dark:border-blue-500/15">
+                            <table className="w-full min-w-[620px] text-left text-[11px]">
+                              <thead className="sticky top-0 bg-blue-50/90 dark:bg-dark-cardSecondary text-light-textMuted dark:text-dark-textMuted">
+                                <tr>
+                                  <th className="px-2 py-1.5 font-semibold">Period</th>
+                                  <th className="px-2 py-1.5 font-semibold">Filing Date</th>
+                                  <th className="px-2 py-1.5 font-semibold">Submission Date</th>
+                                  <th className="px-2 py-1.5 font-semibold">Reconciliation Date</th>
+                                  <th className="px-2 py-1.5 font-semibold">Extended Due Date</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y divide-blue-100/80 dark:divide-blue-500/15">
+                                {selectedTaxScheduleRows.map((period, index) => {
+                                  const periodName = period.periodFrom
+                                    ? new Date(`${period.periodFrom.slice(0, 10)}T00:00:00`).toLocaleDateString(
+                                        'en-IN',
+                                        { month: 'short', year: 'numeric' }
+                                      )
+                                    : `Period ${index + 1}`;
 
-                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
-                            Reconciliation
-                          </span>
-                          <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block flex items-center gap-1">
-                            {selectedTax.reconciliationRequired ? (
-                              <span className="text-brand-600 dark:text-brand-400 font-semibold flex items-center gap-1">
-                                <RefreshCw className="w-2.5 h-2.5" /> Required
-                              </span>
-                            ) : (
-                              <span className="text-light-textMuted dark:text-dark-textMuted">Optional</span>
-                            )}
-                          </span>
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
-                            Statutory Priority
-                          </span>
-                          <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block">
-                            {selectedTax.priority || 'Medium'}
-                          </span>
-                        </div>
-
-                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-dark-bg/60 border border-blue-100 dark:border-blue-500/20">
-                          <span className="text-light-textMuted dark:text-dark-textMuted block text-[12px] font-semibold">
-                            Reporting Cycle
-                          </span>
-                          <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary mt-0.5 block truncate">
-                            {selectedTax.periodFrom && selectedTax.periodTo
-                              ? `${formatDate(selectedTax.periodFrom)} - ${formatDate(selectedTax.periodTo)}`
-                              : selectedTax.filingPeriod || 'Active FY'}
-                          </span>
-                        </div>
+                                  return (
+                                    <tr key={`${period.periodFrom}-${period.periodTo}-${index}`}>
+                                      <td className="whitespace-nowrap px-2 py-1.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                                        <span>{periodName}</span>
+                                        {period.periodFrom && period.periodTo && (
+                                          <span className="ml-1 font-normal text-light-textMuted dark:text-dark-textMuted">
+                                            {formatDate(period.periodFrom)} – {formatDate(period.periodTo)}
+                                          </span>
+                                        )}
+                                      </td>
+                                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.filingDate)}</td>
+                                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.submissionDate)}</td>
+                                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.reconciliationDate)}</td>
+                                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.extendedDate)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <p className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                            No filing schedule dates configured.
+                          </p>
+                        )}
                       </div>
 
                       {/* Description / Instructions */}
@@ -923,114 +1053,129 @@ export const WorkMasterPage: React.FC = () => {
                     </div>
                   ) : null}
 
+                  {/* Required Documents from Document Master */}
+                  <div className="space-y-2 pt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                        Required Documents
+                      </label>
+                      <span className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                        Select the documents this work needs
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                      <select
+                        value={documentToAdd}
+                        onChange={(event) => {
+                          setDocumentToAdd(event.target.value);
+                          setSelectedDocumentFile(null);
+                        }}
+                        disabled={availableDocuments.length === 0}
+                        className="min-w-0 flex-1 rounded-xl border border-light-border bg-light-bg px-3 py-2 text-xs text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
+                      >
+                        <option value="">
+                          {availableDocuments.length > 0
+                            ? '-- Select a document --'
+                            : 'No document names in Document Master'}
+                        </option>
+                        {availableDocuments
+                          .filter(
+                            (document) =>
+                              !formData.defaultDocumentFiles.some(
+                                (file) => file.documentName === document.name
+                              )
+                          )
+                          .map((document) => (
+                            <option key={document._id} value={document.name}>
+                              {document.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {documentToAdd && (
+                      <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 dark:border-brand-500/30 dark:bg-brand-500/5">
+                        <label className="mb-1.5 block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                          Upload {documentToAdd} *
+                        </label>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                          <input
+                            type="file"
+                            onChange={(event) =>
+                              setSelectedDocumentFile(event.target.files?.[0] || null)
+                            }
+                            className="min-w-0 flex-1 rounded-lg border border-light-border bg-white px-2 py-1.5 text-xs text-light-textSecondary dark:border-dark-border dark:bg-dark-bg dark:text-dark-textSecondary"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleUploadRequiredDocument}
+                            disabled={!selectedDocumentFile || uploadingRequiredDocument}
+                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <Upload className="h-3.5 w-3.5" />
+                            {uploadingRequiredDocument ? 'Uploading...' : 'Upload & Add'}
+                          </button>
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                          The uploaded file will be attached to this required document in the work template.
+                        </p>
+                      </div>
+                    )}
+
+                    {formData.defaultDocuments.length > 0 ? (
+                      <div className="flex max-h-24 flex-wrap gap-2 overflow-y-auto rounded-xl border border-light-border/70 bg-light-bg/40 p-2 dark:border-dark-border dark:bg-dark-bg/40">
+                        {formData.defaultDocuments.map((documentName) => {
+                          const uploadedFile = formData.defaultDocumentFiles.find(
+                            (file) => file.documentName === documentName
+                          );
+
+                          return (
+                            <span
+                              key={documentName}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-light-textPrimary dark:border-brand-500/30 dark:bg-dark-card dark:text-dark-textPrimary"
+                            >
+                              <button
+                                type="button"
+                                disabled={!uploadedFile}
+                                onClick={() =>
+                                  uploadedFile && handleOpenRequiredDocument(uploadedFile)
+                                }
+                                title={uploadedFile ? `Open ${uploadedFile.fileName}` : 'No file uploaded'}
+                                className="flex flex-col text-left disabled:cursor-default"
+                              >
+                                <span className={uploadedFile ? 'text-brand-600 underline decoration-brand-300 underline-offset-2 dark:text-brand-300' : ''}>
+                                  {documentName}
+                                </span>
+                                <span className="text-[10px] font-normal text-light-textMuted dark:text-dark-textMuted">
+                                  {uploadedFile?.fileName || 'No file uploaded'}
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveRequiredDocument(documentName)}
+                                aria-label={`Remove ${documentName}`}
+                                className="rounded p-0.5 text-light-textMuted hover:bg-rose-50 hover:text-status-red dark:hover:bg-rose-500/10"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </span>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                        No required documents selected.{' '}
+                        {availableDocuments.length === 0 && (
+                          <NavLink to="/masters/documents" className="font-semibold text-brand-600 hover:underline dark:text-brand-300">
+                            Add document names in Document Master.
+                          </NavLink>
+                        )}
+                      </p>
+                    )}
+                  </div>
+
                   {/* Work Execution Settings */}
                   <div className="space-y-4 pt-2">
-                    <div className="text-[13px] font-bold text-light-textSecondary dark:text-dark-textSecondary uppercase tracking-wider flex items-center gap-1.5">
-                      <span className="w-4 h-4 rounded-full bg-blue-500 text-white flex items-center justify-center text-[12px]">2</span>
-                      Work Execution & Template Settings
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {/* Category */}
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Category *
-                        </label>
-                        <select
-                          value={formData.category}
-                          onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                          className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none text-xs font-semibold"
-                        >
-                          <option value="GST">GST</option>
-                          <option value="Income Tax">Income Tax</option>
-                          <option value="TDS">TDS</option>
-                          <option value="Compliance">Compliance</option>
-                          <option value="Advisory">Advisory</option>
-                          <option value="Others">Others</option>
-                        </select>
-                      </div>
-
-                      {/* Expected Timeline */}
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Expected Timeline *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          placeholder="e.g. 2 Days, 5 Days"
-                          value={formData.timeline}
-                          onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                          className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none text-xs font-semibold"
-                        />
-                        <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                          {['1 Day', '2 Days', '3 Days', '5 Days', '7 Days'].map((t) => (
-                            <button
-                              key={t}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, timeline: t })}
-                              className={`px-1.5 py-0.5 rounded text-[12px] font-semibold border transition-colors ${
-                                formData.timeline === t
-                                  ? 'bg-brand-500 text-white border-brand-500'
-                                  : 'bg-light-bg dark:bg-dark-card border-light-border dark:border-dark-border text-light-textMuted hover:text-light-textPrimary'
-                              }`}
-                            >
-                              {t}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Priority */}
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Default Priority
-                        </label>
-                        <select
-                          value={formData.defaultPriority}
-                          onChange={(e) =>
-                            setFormData({ ...formData, defaultPriority: e.target.value as any })
-                          }
-                          className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none text-xs font-semibold"
-                        >
-                          <option value="Low">Low</option>
-                          <option value="Medium">Medium</option>
-                          <option value="High">High</option>
-                          <option value="Urgent">Urgent</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Status & Remarks */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      <div>
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Status
-                        </label>
-                        <select
-                          value={formData.status}
-                          onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
-                          className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none text-xs font-semibold"
-                        >
-                          <option value="Active">Active</option>
-                          <option value="Inactive">Inactive</option>
-                        </select>
-                      </div>
-
-                      <div className="sm:col-span-2">
-                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                          Work Description / Instructions
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Standard instructions for staff or article trainees..."
-                          value={formData.description}
-                          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                          className="w-full px-3 py-2 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none text-xs"
-                        />
-                      </div>
-                    </div>
-
                     {/* Standard Checklist Steps */}
                     <div className="space-y-2 pt-1">
                       <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
@@ -1083,6 +1228,8 @@ export const WorkMasterPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
+
+
                   </div>
                 </div>
               )}
@@ -1214,6 +1361,52 @@ export const WorkMasterPage: React.FC = () => {
                 </div>
               </div>
 
+              {selectedWorkRequiredDocuments.length > 0 && (
+                <div className="rounded-xl border border-brand-200/80 bg-brand-50/40 p-3 dark:border-brand-500/20 dark:bg-brand-500/5">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                      Required Documents
+                    </div>
+                    <span className="text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
+                      {selectedWorkRequiredDocuments.length} item{selectedWorkRequiredDocuments.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedWorkRequiredDocuments.map((documentName) => {
+                      const uploadedFile = selectedWorkForAssignments?.defaultDocumentFiles?.find(
+                        (file) => file.documentName === documentName
+                      );
+
+                      return uploadedFile ? (
+                        <button
+                          key={documentName}
+                          type="button"
+                          onClick={() => handleOpenRequiredDocument(uploadedFile)}
+                          title={`Open ${uploadedFile.fileName}`}
+                          className="inline-flex max-w-full items-center gap-2 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-left text-xs text-brand-700 transition-colors hover:border-brand-400 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-dark-card dark:text-brand-300 dark:hover:bg-brand-500/10"
+                        >
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span className="flex min-w-0 flex-col">
+                            <span className="truncate font-semibold">{documentName}</span>
+                            <span className="truncate text-[10px] text-light-textMuted dark:text-dark-textMuted">
+                              {uploadedFile.fileName}
+                            </span>
+                          </span>
+                        </button>
+                      ) : (
+                        <span
+                          key={documentName}
+                          className="inline-flex items-center gap-2 rounded-lg border border-light-border bg-white px-2.5 py-1.5 text-xs text-light-textSecondary dark:border-dark-border dark:bg-dark-card dark:text-dark-textSecondary"
+                        >
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <span>{documentName} — file not uploaded</span>
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Collapsible Assign Form */}
               {showQuickAssignForm && (
                 <form
@@ -1267,47 +1460,6 @@ export const WorkMasterPage: React.FC = () => {
                       </select>
                     </div>
 
-                    <div>
-                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                        Due Date *
-                      </label>
-                      <input
-                        type="date"
-                        required
-                        value={quickAssignData.dueDate}
-                        onChange={(e) => setQuickAssignData({ ...quickAssignData, dueDate: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                        Priority
-                      </label>
-                      <select
-                        value={quickAssignData.priority}
-                        onChange={(e) => setQuickAssignData({ ...quickAssignData, priority: e.target.value as any })}
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Urgent">Urgent</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary text-xs">
-                      Remarks / Instructions
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Assigned from Work Master template..."
-                      value={quickAssignData.remarks}
-                      onChange={(e) => setQuickAssignData({ ...quickAssignData, remarks: e.target.value })}
-                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none"
-                    />
                   </div>
 
                   <div className="flex items-center justify-end gap-2 pt-2">
@@ -1473,6 +1625,17 @@ export const WorkMasterPage: React.FC = () => {
                                 >
                                   {a.status}
                                 </span>
+                                {canDeleteAssignments && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteWorkAssignment(a._id, a.workCode)}
+                                    title="Delete assignment"
+                                    aria-label={`Delete assignment ${a.workCode}`}
+                                    className="rounded-md p-1.5 text-light-textMuted transition-colors hover:bg-rose-50 hover:text-status-red dark:hover:bg-rose-500/10"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           );
@@ -1493,6 +1656,7 @@ export const WorkMasterPage: React.FC = () => {
                         <th className="py-2.5 px-3">Due Date</th>
                         <th className="py-2.5 px-3">Priority</th>
                         <th className="py-2.5 px-3">Status</th>
+                        {canDeleteAssignments && <th className="py-2.5 px-3 text-right">Action</th>}
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
@@ -1538,6 +1702,19 @@ export const WorkMasterPage: React.FC = () => {
                               {a.status}
                             </span>
                           </td>
+                          {canDeleteAssignments && (
+                            <td className="py-2.5 px-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteWorkAssignment(a._id, a.workCode)}
+                                title="Delete assignment"
+                                aria-label={`Delete assignment ${a.workCode}`}
+                                className="rounded-md p-1.5 text-light-textMuted transition-colors hover:bg-rose-50 hover:text-status-red dark:hover:bg-rose-500/10"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </td>
+                          )}
                         </tr>
                       ))}
                     </tbody>
