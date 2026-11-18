@@ -144,12 +144,6 @@ export const TaxGroupMasterPage: React.FC = () => {
 
       {/* Main Content Card */}
       <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-card-light dark:shadow-card-dark overflow-hidden">
-        <div className="flex justify-end p-4 border-b border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-cardSecondary/30">
-          <div className="text-xs text-light-textMuted dark:text-dark-textMuted font-semibold">
-            Showing {taxGroups.length} configured Tax Groups
-          </div>
-        </div>
-
         {/* Tax Groups Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
@@ -157,7 +151,6 @@ export const TaxGroupMasterPage: React.FC = () => {
               <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4 w-14">#</th>
                 <th className="py-3 px-4">Tax Group Name</th>
-                <th className="py-3 px-4">Group Code</th>
                 <th className="py-3 px-4">Linked Taxes</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
@@ -166,13 +159,13 @@ export const TaxGroupMasterPage: React.FC = () => {
             <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={5} className="py-12 text-center text-light-textMuted font-medium">
                     Loading tax groups...
                   </td>
                 </tr>
               ) : taxGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={5} className="py-12 text-center text-light-textMuted font-medium">
                     No tax groups found. Click "+ Add Tax Group" to create one.
                   </td>
                 </tr>
@@ -187,11 +180,6 @@ export const TaxGroupMasterPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-light-textPrimary dark:text-dark-textPrimary">
                       {g.groupName}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-brand-600 dark:text-brand-400">
-                      <span className="px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 border border-brand-200 dark:border-brand-500/20 text-[13px]">
-                        {g.groupCode}
-                      </span>
                     </td>
                     <td className="py-3.5 px-4">
                       {(g.linkedTaxesCount ?? 0) > 0 ? (

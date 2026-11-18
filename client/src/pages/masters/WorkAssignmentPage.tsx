@@ -119,7 +119,7 @@ export const WorkAssignmentPage: React.FC = () => {
           <h1 className="text-2xl font-bold tracking-tight text-light-textPrimary dark:text-dark-textPrimary">
             Work Assignment
           </h1>
-          <p className="text-xs sm:text-sm text-light-textSecondary dark:text-dark-textSecondary font-medium">
+          <p className="text-xs sm:text-sm text-light-textSecondary dark:text-dark-textSecondary font-normal">
             Assign works to clients and employees
           </p>
         </div>
@@ -133,7 +133,7 @@ export const WorkAssignmentPage: React.FC = () => {
               <AlertCircle className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-xs font-bold text-amber-900 dark:text-amber-200">
+              <h4 className="text-xs font-normal text-amber-900 dark:text-amber-200">
                 Dependency Notice: Work Assignment requires configured Work Templates
               </h4>
               <p className="text-[13px] text-amber-700 dark:text-amber-300">
@@ -143,7 +143,7 @@ export const WorkAssignmentPage: React.FC = () => {
           </div>
           <NavLink
             to="/masters/work"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shrink-0 self-start sm:self-auto transition-all shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-normal shrink-0 self-start sm:self-auto transition-all shadow-sm"
           >
             <span>Go to Work Master</span>
           </NavLink>
@@ -159,18 +159,18 @@ export const WorkAssignmentPage: React.FC = () => {
                 <ClipboardList className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-light-textPrimary dark:text-dark-textPrimary">New Work Assignment</h2>
+                <h2 className="text-sm font-normal text-light-textPrimary dark:text-dark-textPrimary">New Work Assignment</h2>
                 <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-0.5">Choose a client, work template, assignee, and due date.</p>
               </div>
             </div>
             <span className="hidden sm:inline text-xs text-light-textMuted dark:text-dark-textMuted">* Required fields</span>
           </div>
 
-          <form onSubmit={handleAssignWork} className="space-y-5 text-xs font-medium">
+          <form onSubmit={handleAssignWork} className="space-y-5 text-xs font-normal">
             <div className="grid grid-cols-1 2xl:grid-cols-2 gap-x-6 gap-y-4">
             {/* Client Dropdown */}
             <div>
-              <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
+              <label className="block font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                 Client *
               </label>
               <select
@@ -190,7 +190,7 @@ export const WorkAssignmentPage: React.FC = () => {
 
             {/* Work Dropdown */}
             <div>
-              <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
+              <label className="block font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                 Work *
               </label>
               <select
@@ -213,7 +213,7 @@ export const WorkAssignmentPage: React.FC = () => {
 
             {/* Assign To Employee Dropdown */}
             <div>
-              <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
+              <label className="block font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                 Assign To *
               </label>
               <select
@@ -233,7 +233,7 @@ export const WorkAssignmentPage: React.FC = () => {
 
             {/* Due On Date Picker */}
             <div>
-              <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
+              <label className="block font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                 Due On *
               </label>
               <div className="relative">
@@ -250,7 +250,7 @@ export const WorkAssignmentPage: React.FC = () => {
 
             {/* Remarks Multiline */}
             <div>
-              <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
+              <label className="block font-bold text-light-textPrimary dark:text-dark-textPrimary mb-1.5">
                 Remarks
               </label>
               <textarea
@@ -267,7 +267,7 @@ export const WorkAssignmentPage: React.FC = () => {
               <button
                 type="button"
                 onClick={handleReset}
-                className="px-5 py-2.5 rounded-xl border border-light-border dark:border-dark-border bg-transparent text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-bg dark:hover:bg-dark-cardSecondary font-semibold transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-light-border dark:border-dark-border bg-transparent text-light-textSecondary dark:text-dark-textSecondary hover:bg-light-bg dark:hover:bg-dark-cardSecondary font-normal transition-colors"
               >
                 Reset
               </button>
@@ -275,7 +275,7 @@ export const WorkAssignmentPage: React.FC = () => {
               <button
                 type="submit"
                 disabled={workMasters.length === 0}
-                className={`px-6 py-2.5 rounded-xl font-bold transition-all ${
+                className={`px-6 py-2.5 rounded-xl font-normal transition-all ${
                   workMasters.length === 0
                     ? 'bg-gray-400 dark:bg-gray-700 text-gray-200 cursor-not-allowed opacity-75'
                     : 'bg-brand-500 hover:bg-brand-600 text-white shadow-md shadow-brand-500/20 active:scale-95'
@@ -293,11 +293,11 @@ export const WorkAssignmentPage: React.FC = () => {
             <div className="p-4 border-b border-light-border dark:border-dark-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-4 h-4 text-brand-500" />
-                <span className="font-bold text-sm text-light-textPrimary dark:text-dark-textPrimary">
+                <span className="font-normal text-sm text-light-textPrimary dark:text-dark-textPrimary">
                   Active Work Assignments
                 </span>
               </div>
-              <NavLink to="/works" className="text-xs font-semibold text-brand-500 hover:underline">
+              <NavLink to="/works" className="text-xs font-normal text-brand-500 hover:underline">
                 View All Works →
               </NavLink>
             </div>
@@ -305,7 +305,7 @@ export const WorkAssignmentPage: React.FC = () => {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+                  <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-normal text-light-textSecondary dark:text-dark-textSecondary">
                     <th className="py-3 px-4">Code</th>
                     <th className="py-3 px-4">Work / Client</th>
                     <th className="py-3 px-4">Assignee</th>
@@ -314,16 +314,16 @@ export const WorkAssignmentPage: React.FC = () => {
                     <th className="py-3 px-4 text-right">Quick Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
+                <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-normal">
                   {recentAssignments.map((a: any) => (
                     <tr key={a._id} className="hover:bg-light-bg/50 dark:hover:bg-dark-cardSecondary/50">
-                      <td className="py-3 px-4 font-semibold text-brand-500">{a.workCode}</td>
+                      <td className="py-3 px-4 font-normal text-brand-500">{a.workCode}</td>
                       <td className="py-3 px-4">
-                        <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                        <div className="font-normal text-light-textPrimary dark:text-dark-textPrimary">
                           {a.workMasterId?.workName || 'Tax Filing'}
                         </div>
                         {(a.taxName || a.workMasterId?.taxId?.taxName) && (
-                          <div className="text-[12px] text-brand-600 dark:text-brand-400 font-bold flex items-center gap-1 mt-0.5">
+                          <div className="text-[12px] text-brand-600 dark:text-brand-400 font-normal flex items-center gap-1 mt-0.5">
                             <span>Tax: {a.taxName || a.workMasterId?.taxId?.taxName}</span>
                           </div>
                         )}
@@ -339,7 +339,7 @@ export const WorkAssignmentPage: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <span
-                          className={`px-2.5 py-0.5 rounded-full text-[13px] font-semibold ${
+                          className={`px-2.5 py-0.5 rounded-full text-[13px] font-normal ${
                             a.status === 'Completed' || a.status === 'Filed'
                               ? 'bg-status-greenLight text-status-green'
                               : a.status === 'In Progress'
@@ -354,7 +354,7 @@ export const WorkAssignmentPage: React.FC = () => {
                         {a.status !== 'Completed' && a.status !== 'Filed' && (
                           <button
                             onClick={() => handleStatusUpdate(a._id, 'Completed')}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-status-green/10 text-status-green hover:bg-status-green/20 text-[13px] font-semibold transition-colors"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-status-green/10 text-status-green hover:bg-status-green/20 text-[13px] font-normal transition-colors"
                           >
                             <CheckCircle2 className="w-3 h-3" />
                             <span>Mark Done</span>

@@ -38,7 +38,7 @@ export const PromotionalCard: React.FC = () => {
         <h3 className="text-xl font-bold tracking-tight text-white leading-tight">
           {theme === 'light'
             ? 'Stay Compliant, Grow Confident'
-            : 'Your Compliance Our Priority'}
+            : 'Your Compliance, Simplified'}
         </h3>
 
         <p className="mt-2 text-xs text-blue-100 dark:text-blue-200 leading-relaxed font-medium">

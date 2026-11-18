@@ -266,7 +266,7 @@ export const ClientsPage: React.FC = () => {
       {/* Client 360 Detail Drawer/Modal */}
       {selectedClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border">
+          <div className="w-full max-w-5xl max-h-[90vh] overflow-y-auto p-6 bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border">
             <div className="flex items-start justify-between pb-4 mb-4 border-b border-light-border dark:border-dark-border">
               <div>
                 <span className="text-xs font-bold font-mono text-brand-500">
@@ -291,20 +291,20 @@ export const ClientsPage: React.FC = () => {
             </div>
 
             {/* Quick Profile Summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3.5 rounded-xl bg-light-bg dark:bg-dark-cardSecondary text-xs mb-5 font-medium">
-              <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3.5 rounded-xl bg-light-bg dark:bg-dark-cardSecondary text-xs mb-5 font-medium">
+              <div className="min-w-0">
                 <span className="text-light-textMuted block text-[13px]">Primary Contact</span>
                 <span className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                   {selectedClient.client?.contactPerson || selectedClient.contactPerson || selectedClient.name}
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <span className="text-light-textMuted block text-[13px]">Mobile</span>
                 <span className="font-semibold">{selectedClient.client?.mobile || selectedClient.mobile}</span>
               </div>
-              <div>
+              <div className="min-w-0 sm:col-span-2 lg:col-span-1">
                 <span className="text-light-textMuted block text-[13px]">Email</span>
-                <span className="font-semibold">{selectedClient.client?.email || selectedClient.email || '-'}</span>
+                <span className="block min-w-0 break-all font-semibold">{selectedClient.client?.email || selectedClient.email || '-'}</span>
               </div>
             </div>
 

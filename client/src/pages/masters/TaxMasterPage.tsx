@@ -409,20 +409,15 @@ export const TaxMasterPage: React.FC = () => {
                       <td className="py-3 px-3.5 text-light-textMuted dark:text-dark-textMuted whitespace-nowrap">
                         {tax.taxId}
                       </td>
-                      <td className="py-3 px-3.5 font-semibold text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
-                        <span className="px-2 py-0.5 rounded-md text-[12px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
+                      <td className="py-3 px-3.5 font-normal text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-md text-[12px] font-normal bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
                           {tax.taxGroup}
                         </span>
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
-                        <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                        <div className="font-normal text-light-textPrimary dark:text-dark-textPrimary">
                           {tax.taxName}
                         </div>
-                        {tax.taxCode && (
-                          <div className="text-[12px] text-light-textMuted dark:text-dark-textMuted font-mono">
-                            {tax.taxCode}
-                          </div>
-                        )}
                       </td>
                       <td className="py-3 px-3.5 text-light-textSecondary dark:text-dark-textSecondary max-w-[200px]">
                         {tax.description ? (
@@ -793,10 +788,10 @@ export const TaxMasterPage: React.FC = () => {
                   <Calendar className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                  <h2 className="text-base font-normal text-light-textPrimary dark:text-dark-textPrimary">
                     Filing Schedule Dates
                   </h2>
-                  <p className="mt-0.5 text-xs font-medium text-light-textSecondary dark:text-dark-textSecondary">
+                  <p className="mt-0.5 text-xs font-normal text-light-textSecondary dark:text-dark-textSecondary">
                     {selectedTaxSchedule.taxName} ·{' '}
                     {selectedTaxSchedule.frequency || selectedTaxSchedule.filingFrequency || 'Monthly'}
                     {selectedTaxSchedule.applicableFinancialYear
@@ -817,16 +812,24 @@ export const TaxMasterPage: React.FC = () => {
 
             <div className="overflow-y-auto p-4 sm:p-6">
               {selectedTaxScheduleRows.length > 0 ? (
-                <div className="overflow-x-auto rounded-xl border border-light-border dark:border-dark-border">
-                  <table className="w-full min-w-[1280px] text-left text-sm">
-                    <thead className="bg-light-bg/60 text-xs font-bold text-light-textSecondary dark:bg-dark-cardSecondary/60 dark:text-dark-textSecondary">
+                <div className="overflow-hidden rounded-xl border border-light-border dark:border-dark-border">
+                  <table className="w-full table-fixed text-left text-sm">
+                    <colgroup>
+                      <col className="w-[15%]" />
+                      <col className="w-[25%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[14%]" />
+                      <col className="w-[17%]" />
+                      <col className="w-[15%]" />
+                    </colgroup>
+                    <thead className="bg-light-bg/60 text-xs font-normal text-light-textSecondary dark:bg-dark-cardSecondary/60 dark:text-dark-textSecondary">
                       <tr>
-                        <th className="px-4 py-3">Period</th>
-                        <th className="px-4 py-3">Reporting Period</th>
-                        <th className="px-4 py-3">Filing Date</th>
-                        <th className="px-4 py-3">Submission Date</th>
-                        <th className="px-4 py-3">Reconciliation Date</th>
-                        <th className="px-4 py-3">Extended Due Date</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Period</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Reporting Period</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Filing Date</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Submission Date</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Reconciliation Date</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Extended Due Date</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-light-border/70 dark:divide-dark-border/70">
@@ -859,13 +862,13 @@ export const TaxMasterPage: React.FC = () => {
                             key={`${period.periodFrom}-${period.periodTo}-${index}`}
                             className="text-light-textPrimary dark:text-dark-textPrimary"
                           >
-                            <td className="whitespace-nowrap px-4 py-3 font-semibold">{periodLabel}</td>
-                            <td className="whitespace-nowrap px-4 py-3">{periodFrom} – {periodTo}</td>
-                            <td className="whitespace-nowrap px-4 py-3 font-medium">
+                            <td className="break-words px-2 py-3 font-normal sm:px-3">{periodLabel}</td>
+                            <td className="break-words px-2 py-3 sm:px-3">{periodFrom} – {periodTo}</td>
+                            <td className="break-words px-2 py-3 font-normal sm:px-3">
                               {period.filingDate ? formatDate(period.filingDate) : 'Not set'}
                             </td>
 
-                            <td className="px-4 py-3 text-xs">
+                            <td className="break-words px-2 py-3 text-xs sm:px-3">
                               {period.submissionDate ? (
                                 <span className="font-medium">{formatDate(period.submissionDate)}</span>
                               ) : loadingScheduleClientFilings ? (
@@ -873,10 +876,10 @@ export const TaxMasterPage: React.FC = () => {
                               ) : scheduleClientFilingsError ? (
                                 <span className="text-status-red">Unavailable</span>
                               ) : periodClientFilings.length > 0 ? (
-                                <div className="max-h-20 min-w-[190px] space-y-1 overflow-y-auto">
+                                <div className="max-h-20 min-w-0 space-y-1 overflow-y-auto">
                                   {periodClientFilings.map((filing) => (
-                                    <div key={filing._id} className="whitespace-nowrap">
-                                      <span className="font-semibold">
+                                    <div key={filing._id} className="break-words">
+                                      <span className="font-normal">
                                         {filing.clientId?.businessName || filing.clientId?.name || 'Client'}:
                                       </span>{' '}
                                       {filing.actualSubmissionDate
@@ -889,7 +892,7 @@ export const TaxMasterPage: React.FC = () => {
                                 <span className="text-light-textMuted dark:text-dark-textMuted">—</span>
                               )}
                             </td>
-                            <td className="px-4 py-3 text-xs">
+                            <td className="break-words px-2 py-3 text-xs sm:px-3">
                               {period.reconciliationDate ? (
                                 <span className="font-medium">{formatDate(period.reconciliationDate)}</span>
                               ) : loadingScheduleClientFilings ? (
@@ -897,10 +900,10 @@ export const TaxMasterPage: React.FC = () => {
                               ) : scheduleClientFilingsError ? (
                                 <span className="text-status-red">Unavailable</span>
                               ) : periodReconciliations.length > 0 ? (
-                                <div className="max-h-20 min-w-[250px] space-y-1 overflow-y-auto">
+                                <div className="max-h-20 min-w-0 space-y-1 overflow-y-auto">
                                   {periodReconciliations.map((filing) => (
-                                    <div key={filing._id} className="whitespace-nowrap">
-                                      <span className="font-semibold">
+                                    <div key={filing._id} className="break-words">
+                                      <span className="font-normal">
                                         {filing.clientId?.businessName || filing.clientId?.name || 'Client'}:
                                       </span>{' '}
                                       Start {filing.reconciliationStartDate
@@ -916,7 +919,7 @@ export const TaxMasterPage: React.FC = () => {
                                 <span className="text-light-textMuted dark:text-dark-textMuted">—</span>
                               )}
                             </td>
-                            <td className="whitespace-nowrap px-4 py-3 text-light-textSecondary dark:text-dark-textSecondary">
+                            <td className="break-words px-2 py-3 text-light-textSecondary dark:text-dark-textSecondary sm:px-3">
                               {period.extendedDate ? formatDate(period.extendedDate) : '—'}
                             </td>
                           </tr>
@@ -928,7 +931,7 @@ export const TaxMasterPage: React.FC = () => {
               ) : (
                 <div className="rounded-xl border border-dashed border-light-border px-5 py-12 text-center dark:border-dark-border">
                   <Calendar className="mx-auto mb-3 h-8 w-8 text-light-textMuted dark:text-dark-textMuted" />
-                  <p className="font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                  <p className="font-normal text-light-textPrimary dark:text-dark-textPrimary">
                     No filing dates configured yet
                   </p>
                   <p className="mt-1 text-sm text-light-textSecondary dark:text-dark-textSecondary">
@@ -939,13 +942,13 @@ export const TaxMasterPage: React.FC = () => {
             </div>
 
             <div className="flex items-center justify-between border-t border-light-border px-5 py-3 dark:border-dark-border sm:px-6">
-              <span className="text-xs font-semibold text-light-textSecondary dark:text-dark-textSecondary">
+              <span className="text-xs font-normal text-light-textSecondary dark:text-dark-textSecondary">
                 {selectedTaxScheduleRows.length} filing period{selectedTaxScheduleRows.length === 1 ? '' : 's'}
               </span>
               <button
                 type="button"
                 onClick={() => setSelectedTaxSchedule(null)}
-                className="rounded-xl border border-light-border px-4 py-2 text-sm font-semibold text-light-textPrimary hover:bg-light-bg dark:border-dark-border dark:text-dark-textPrimary dark:hover:bg-dark-cardSecondary"
+                className="rounded-xl border border-light-border px-4 py-2 text-sm font-normal text-light-textPrimary hover:bg-light-bg dark:border-dark-border dark:text-dark-textPrimary dark:hover:bg-dark-cardSecondary"
               >
                 Close
               </button>

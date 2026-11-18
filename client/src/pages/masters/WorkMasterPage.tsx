@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import api from '../../services/api';
 import { WorkMasterItem, TaxMasterItem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { TaxRuleModal } from '../../components/tax/TaxRuleModal';
 
 export const WorkMasterPage: React.FC = () => {
   const { user } = useAuth();
@@ -174,6 +175,7 @@ export const WorkMasterPage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<WorkMasterItem | null>(null);
+  const [editingTaxRule, setEditingTaxRule] = useState<TaxMasterItem | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
 
@@ -646,8 +648,8 @@ export const WorkMasterPage: React.FC = () => {
               <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                 <th className="py-3 px-4 font-semibold w-12">ID</th>
                 <th className="py-3 px-4 font-semibold">Work Name</th>
-                <th className="py-3 px-4 font-semibold">Tax Name</th>
-                <th className="py-3 px-4 font-semibold">Tax Group</th>
+                <th className="py-3 px-4 font-normal">Tax Name</th>
+                <th className="py-3 px-4 font-normal">Tax Group</th>
                 <th className="py-3 px-4 font-semibold">Timeline</th>
                 <th className="py-3 px-4 font-semibold">Due Date Rule</th>
                 <th className="py-3 px-4 font-semibold">Assigned Team</th>
@@ -689,10 +691,9 @@ export const WorkMasterPage: React.FC = () => {
                       {/* Explicit Tax Name Column matching Tax Master */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         {associatedTax?.taxName ? (
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-brand-500/10 border border-brand-200/80 dark:border-brand-500/20 text-brand-700 dark:text-brand-300 font-bold text-xs shadow-2xs">
-                            <Receipt className="w-3.5 h-3.5 text-brand-500 shrink-0" />
-                            <span>{associatedTax.taxName}</span>
-                          </div>
+                          <span className="text-xs font-normal text-light-textPrimary dark:text-dark-textPrimary whitespace-nowrap">
+                            {associatedTax.taxName}
+                          </span>
                         ) : (
                           <span className="text-light-textMuted dark:text-dark-textMuted italic text-[13px]">
                             Not linked
@@ -701,7 +702,7 @@ export const WorkMasterPage: React.FC = () => {
                       </td>
                       {/* Tax Group Column */}
                       <td className="py-3 px-4 whitespace-nowrap">
-                        <span className="px-2.5 py-0.5 rounded-md text-[12px] font-bold bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary">
+                        <span className="text-xs font-normal text-light-textPrimary dark:text-dark-textPrimary">
                           {associatedTax?.taxGroup || work.category || 'GST'}
                         </span>
                       </td>
@@ -718,16 +719,16 @@ export const WorkMasterPage: React.FC = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenWorkAssignments(work)}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-semibold bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 transition-all cursor-pointer group"
+                            className="inline-flex min-w-[132px] max-w-full items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg text-[13px] font-normal bg-purple-50 hover:bg-purple-100 dark:bg-purple-500/10 dark:hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-500/30 transition-all cursor-pointer group"
                             title="Click to view assigned employees and clients"
                           >
                             <Users className="w-3.5 h-3.5 text-purple-500" />
-                            <span>
+                            <span className="flex min-w-0 flex-col items-start gap-0.5 leading-tight whitespace-nowrap">
                               {work.assignedEmployeesCount}{' '}
                               {work.assignedEmployeesCount === 1 ? 'Employee' : 'Employees'}
-                            </span>
-                            <span className="text-[12px] opacity-75 font-normal">
-                              ({work.totalAssignmentsCount} tasks)
+                              <span className="text-[11px] opacity-75">
+                                {work.totalAssignmentsCount} {work.totalAssignmentsCount === 1 ? 'task' : 'tasks'}
+                              </span>
                             </span>
                             <ChevronRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 transition-transform" />
                           </button>
@@ -846,9 +847,6 @@ export const WorkMasterPage: React.FC = () => {
                   <Receipt className="w-4 h-4 text-brand-500" />
                   <span>{editingWork ? 'Edit Work Template' : 'Add New Work Template'}</span>
                 </h3>
-                <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-0.5">
-                  Select a tax from Tax Master to link statutory compliance parameters
-                </p>
               </div>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -890,7 +888,7 @@ export const WorkMasterPage: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Field 1: Work Name */}
                   <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                    <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                       Work Name *
                     </label>
                     <input
@@ -899,7 +897,7 @@ export const WorkMasterPage: React.FC = () => {
                       placeholder="e.g. GSTR-1 Monthly Return Filing"
                       value={formData.workName}
                       onChange={(e) => setFormData({ ...formData, workName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-xs shadow-2xs"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary !font-normal focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-xs shadow-2xs"
                     />
                     <span className="text-[12px] text-light-textMuted dark:text-dark-textMuted mt-1 block">
                       Name of the job / assignment
@@ -908,12 +906,12 @@ export const WorkMasterPage: React.FC = () => {
 
                   {/* Field 2: Select Tax Name (From Tax Master in DB) */}
                   <div>
-                    <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary flex items-center justify-between">
+                    <label className="block font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary flex items-center justify-between">
                       <span>Select Tax Name *</span>
                       <NavLink
                         to="/masters/tax"
                         target="_blank"
-                        className="text-[12px] font-semibold text-brand-500 hover:underline"
+                        className="text-[12px] font-normal text-brand-500 hover:underline"
                       >
                         + View Tax Master
                       </NavLink>
@@ -922,7 +920,7 @@ export const WorkMasterPage: React.FC = () => {
                       required
                       value={formData.taxId}
                       onChange={(e) => handleTaxSelect(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-xs cursor-pointer shadow-2xs"
+                      className="w-full px-3.5 py-2.5 bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary !font-normal focus:outline-none focus:ring-2 focus:ring-brand-500/30 text-xs cursor-pointer shadow-2xs"
                     >
                       <option value="">-- Select Tax Name (From Tax Master) --</option>
                       {availableTaxes.length > 0 ? (
@@ -950,7 +948,7 @@ export const WorkMasterPage: React.FC = () => {
                   <div className="w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-950/40 border border-brand-200 dark:border-brand-800 flex items-center justify-center mx-auto mb-3 text-brand-600 dark:text-brand-400">
                     <Receipt className="w-6 h-6" />
                   </div>
-                  <h4 className="text-sm font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                  <h4 className="text-sm font-normal text-light-textPrimary dark:text-dark-textPrimary">
                     Select a Tax Name Above
                   </h4>
                   <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary mt-1 max-w-sm mx-auto">
@@ -1039,12 +1037,21 @@ export const WorkMasterPage: React.FC = () => {
                       </div>
 
                       {/* Description / Instructions */}
-                      {selectedTax.description && (
-                        <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary bg-white/60 dark:bg-dark-bg/40 p-2.5 rounded-lg border border-blue-100/80 dark:border-blue-500/10">
+                      <div className="flex items-start justify-between gap-3 text-[13px] text-light-textSecondary dark:text-dark-textSecondary bg-white/60 dark:bg-dark-bg/40 p-2.5 rounded-lg border border-blue-100/80 dark:border-blue-500/10">
+                        <div className="min-w-0 flex-1">
                           <span className="font-semibold text-blue-900 dark:text-blue-300">Regulatory Notes: </span>
-                          {selectedTax.description}
+                          <span>{selectedTax.description || 'No regulatory notes added.'}</span>
                         </div>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => setEditingTaxRule(selectedTax)}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-normal text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                          title="Edit this tax rule"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                          Edit
+                        </button>
+                      </div>
                     </div>
                   ) : editingWork ? (
                     <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
@@ -1056,10 +1063,10 @@ export const WorkMasterPage: React.FC = () => {
                   {/* Required Documents from Document Master */}
                   <div className="space-y-2 pt-1">
                     <div className="flex flex-wrap items-center justify-between gap-1">
-                      <label className="block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                      <label className="block font-normal text-light-textPrimary dark:text-dark-textPrimary">
                         Required Documents
                       </label>
-                      <span className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                      <span className="text-[11px] font-normal text-light-textMuted dark:text-dark-textMuted">
                         Select the documents this work needs
                       </span>
                     </div>
@@ -1071,7 +1078,7 @@ export const WorkMasterPage: React.FC = () => {
                           setSelectedDocumentFile(null);
                         }}
                         disabled={availableDocuments.length === 0}
-                        className="min-w-0 flex-1 rounded-xl border border-light-border bg-light-bg px-3 py-2 text-xs text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
+                        className="min-w-0 flex-1 rounded-xl border border-light-border bg-light-bg px-3 py-2 text-xs !font-normal text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
                       >
                         <option value="">
                           {availableDocuments.length > 0
@@ -1095,7 +1102,7 @@ export const WorkMasterPage: React.FC = () => {
 
                     {documentToAdd && (
                       <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-3 dark:border-brand-500/30 dark:bg-brand-500/5">
-                        <label className="mb-1.5 block font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                        <label className="mb-1.5 block font-normal text-light-textPrimary dark:text-dark-textPrimary">
                           Upload {documentToAdd} *
                         </label>
                         <div className="flex flex-col gap-2 sm:flex-row">
@@ -1110,7 +1117,7 @@ export const WorkMasterPage: React.FC = () => {
                             type="button"
                             onClick={handleUploadRequiredDocument}
                             disabled={!selectedDocumentFile || uploadingRequiredDocument}
-                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-xs font-normal text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             <Upload className="h-3.5 w-3.5" />
                             {uploadingRequiredDocument ? 'Uploading...' : 'Upload & Add'}
@@ -1132,7 +1139,7 @@ export const WorkMasterPage: React.FC = () => {
                           return (
                             <span
                               key={documentName}
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-light-textPrimary dark:border-brand-500/30 dark:bg-dark-card dark:text-dark-textPrimary"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-xs font-normal text-light-textPrimary dark:border-brand-500/30 dark:bg-dark-card dark:text-dark-textPrimary"
                             >
                               <button
                                 type="button"
@@ -1166,7 +1173,7 @@ export const WorkMasterPage: React.FC = () => {
                       <p className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
                         No required documents selected.{' '}
                         {availableDocuments.length === 0 && (
-                          <NavLink to="/masters/documents" className="font-semibold text-brand-600 hover:underline dark:text-brand-300">
+                          <NavLink to="/masters/documents" className="font-normal text-brand-600 hover:underline dark:text-brand-300">
                             Add document names in Document Master.
                           </NavLink>
                         )}
@@ -1189,7 +1196,7 @@ export const WorkMasterPage: React.FC = () => {
                           >
                             <div className="flex items-center gap-2 text-light-textPrimary dark:text-dark-textPrimary">
                               <CheckCircle2 className="w-3.5 h-3.5 text-brand-500 shrink-0" />
-                              <span className="font-medium">{step}</span>
+                              <span className="font-normal">{step}</span>
                             </div>
                             <button
                               type="button"
@@ -1216,12 +1223,12 @@ export const WorkMasterPage: React.FC = () => {
                               handleAddChecklist();
                             }
                           }}
-                          className="flex-1 px-3 py-1.5 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
+                          className="flex-1 px-3 py-1.5 bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border rounded-lg text-xs !font-normal text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleAddChecklist}
-                          className="px-3 py-1.5 rounded-lg bg-light-border dark:bg-dark-border hover:bg-brand-500 hover:text-white text-light-textPrimary dark:text-dark-textPrimary text-xs font-semibold transition-colors flex items-center gap-1"
+                          className="px-3 py-1.5 rounded-lg bg-light-border dark:bg-dark-border hover:bg-brand-500 hover:text-white text-light-textPrimary dark:text-dark-textPrimary text-xs font-normal transition-colors flex items-center gap-1"
                         >
                           <Plus className="w-3.5 h-3.5" />
                           <span>Add</span>
@@ -1278,31 +1285,25 @@ export const WorkMasterPage: React.FC = () => {
       {/* MODAL 2: WORK MASTER ASSIGNMENTS & TEAM ALLOCATIONS */}
       {/* ========================================================================= */}
       {isAssignmentsModalOpen && selectedWorkForAssignments && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-4xl max-h-[90vh] flex flex-col bg-white dark:bg-dark-card rounded-2xl shadow-2xl border border-light-border dark:border-dark-border overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-6xl max-h-[90vh] flex flex-col bg-white dark:bg-dark-card rounded-xl shadow-xl border border-light-border dark:border-dark-border overflow-hidden">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-5 border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/40">
+            <div className="flex items-center justify-between p-5 border-b border-light-border dark:border-dark-border bg-white dark:bg-dark-card">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm">
+                <div className="w-10 h-10 rounded-lg bg-light-bg dark:bg-dark-cardSecondary text-light-textSecondary dark:text-dark-textSecondary flex items-center justify-center">
                   <Briefcase className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-bold text-base text-light-textPrimary dark:text-dark-textPrimary">
+                  <h3 className="font-semibold text-base text-light-textPrimary dark:text-dark-textPrimary">
                       {selectedWorkForAssignments.workName}
-                    </h3>
-                    {selectedWorkTax?.taxName && (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300 border border-brand-200/80 dark:border-brand-500/20 text-xs font-bold shadow-2xs">
-                        <Receipt className="w-3.5 h-3.5 text-brand-500" />
-                        <span>Tax Name: {selectedWorkTax.taxName}</span>
-                      </span>
-                    )}
-                    <span className="text-[13px] font-bold px-2 py-0.5 rounded-md bg-light-border/60 dark:bg-dark-border text-light-textSecondary">
-                      {selectedWorkTax?.taxGroup || selectedWorkForAssignments.category}
-                    </span>
-                  </div>
+                  </h3>
+                  {selectedWorkTax?.taxName && (
+                    <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
+                      {selectedWorkTax.taxName} · {selectedWorkTax.taxGroup || selectedWorkForAssignments.category}
+                    </p>
+                  )}
                   <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary">
-                    Timeline: {selectedWorkForAssignments.timeline} • Priority: {selectedWorkForAssignments.defaultPriority}
+                    Timeline: {selectedWorkForAssignments.timeline}
                   </p>
                 </div>
               </div>
@@ -1311,7 +1312,7 @@ export const WorkMasterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowQuickAssignForm(!showQuickAssignForm)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-95"
+                  className="inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1.5 rounded-lg bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>{showQuickAssignForm ? 'Close Form' : 'Assign to Team Member'}</span>
@@ -1329,93 +1330,47 @@ export const WorkMasterPage: React.FC = () => {
             {/* Modal Body */}
             <div className="flex-1 overflow-y-auto p-5 space-y-5">
               {/* Quick KPI Stats Row */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
-                    <Briefcase className="w-3.5 h-3.5 text-purple-500" />
+              <div className="grid grid-cols-3 divide-x divide-light-border rounded-lg border border-light-border dark:divide-dark-border dark:border-dark-border">
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary flex items-center gap-1.5">
+                    <Briefcase className="w-3.5 h-3.5 text-light-textMuted" />
                     Total Active Tasks
                   </div>
-                  <div className="text-xl font-bold text-light-textPrimary dark:text-dark-textPrimary mt-1">
+                  <div className="text-lg text-light-textPrimary dark:text-dark-textPrimary">
                     {totalWorkAssignmentsCount}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
-                    <Users className="w-3.5 h-3.5 text-brand-500" />
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-light-textMuted" />
                     Assigned Employees
                   </div>
-                  <div className="text-xl font-bold text-light-textPrimary dark:text-dark-textPrimary mt-1">
+                  <div className="text-lg text-light-textPrimary dark:text-dark-textPrimary">
                     {employeeSummaries.length}
                   </div>
                 </div>
 
-                <div className="p-3 rounded-xl bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border">
-                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary font-medium flex items-center gap-1">
-                    <Building className="w-3.5 h-3.5 text-emerald-500" />
+                <div className="flex items-center justify-between gap-2 px-4 py-3">
+                  <div className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary flex items-center gap-1.5">
+                    <Building className="w-3.5 h-3.5 text-light-textMuted" />
                     Unique Clients
                   </div>
-                  <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                  <div className="text-lg text-light-textPrimary dark:text-dark-textPrimary">
                     {new Set(workAssignmentsList.map((w: any) => w.clientId?._id || w.clientId)).size}
                   </div>
                 </div>
               </div>
 
-              {selectedWorkRequiredDocuments.length > 0 && (
-                <div className="rounded-xl border border-brand-200/80 bg-brand-50/40 p-3 dark:border-brand-500/20 dark:bg-brand-500/5">
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary">
-                      Required Documents
-                    </div>
-                    <span className="text-[11px] font-semibold text-light-textMuted dark:text-dark-textMuted">
-                      {selectedWorkRequiredDocuments.length} item{selectedWorkRequiredDocuments.length === 1 ? '' : 's'}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {selectedWorkRequiredDocuments.map((documentName) => {
-                      const uploadedFile = selectedWorkForAssignments?.defaultDocumentFiles?.find(
-                        (file) => file.documentName === documentName
-                      );
-
-                      return uploadedFile ? (
-                        <button
-                          key={documentName}
-                          type="button"
-                          onClick={() => handleOpenRequiredDocument(uploadedFile)}
-                          title={`Open ${uploadedFile.fileName}`}
-                          className="inline-flex max-w-full items-center gap-2 rounded-lg border border-brand-200 bg-white px-2.5 py-1.5 text-left text-xs text-brand-700 transition-colors hover:border-brand-400 hover:bg-brand-50 dark:border-brand-500/30 dark:bg-dark-card dark:text-brand-300 dark:hover:bg-brand-500/10"
-                        >
-                          <FileText className="h-4 w-4 shrink-0" />
-                          <span className="flex min-w-0 flex-col">
-                            <span className="truncate font-semibold">{documentName}</span>
-                            <span className="truncate text-[10px] text-light-textMuted dark:text-dark-textMuted">
-                              {uploadedFile.fileName}
-                            </span>
-                          </span>
-                        </button>
-                      ) : (
-                        <span
-                          key={documentName}
-                          className="inline-flex items-center gap-2 rounded-lg border border-light-border bg-white px-2.5 py-1.5 text-xs text-light-textSecondary dark:border-dark-border dark:bg-dark-card dark:text-dark-textSecondary"
-                        >
-                          <FileText className="h-4 w-4 shrink-0" />
-                          <span>{documentName} — file not uploaded</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
               {/* Collapsible Assign Form */}
               {showQuickAssignForm && (
                 <form
                   onSubmit={handleQuickAssignSubmit}
-                  className="p-4 rounded-xl bg-purple-50/50 dark:bg-purple-500/5 border border-purple-200 dark:border-purple-500/20 space-y-3 animate-in fade-in"
+                  className="p-4 rounded-lg bg-light-bg/40 dark:bg-dark-cardSecondary/30 border border-light-border dark:border-dark-border space-y-3 animate-in fade-in"
                 >
                   <div className="flex items-center justify-between">
-                    <h4 className="text-xs font-bold text-purple-800 dark:text-purple-300 flex items-center gap-1.5">
-                      <Plus className="w-4 h-4" />
+                    <h4 className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-1.5">
+                      <Plus className="w-4 h-4 text-brand-500" />
                       Assign "{selectedWorkForAssignments.workName}" to an Employee
                     </h4>
                     <span className="text-[13px] text-light-textMuted">Fields marked with * are required</span>
@@ -1430,7 +1385,7 @@ export const WorkMasterPage: React.FC = () => {
                         required
                         value={quickAssignData.employeeId}
                         onChange={(e) => setQuickAssignData({ ...quickAssignData, employeeId: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                       >
                         <option value="">Select Employee...</option>
                         {allEmployeesList.map((emp) => (
@@ -1449,7 +1404,7 @@ export const WorkMasterPage: React.FC = () => {
                         required
                         value={quickAssignData.clientId}
                         onChange={(e) => setQuickAssignData({ ...quickAssignData, clientId: e.target.value })}
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                        className="w-full px-3 py-2 rounded-lg bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                       >
                         <option value="">Select Client...</option>
                         {allClientsList.map((c) => (
@@ -1473,7 +1428,7 @@ export const WorkMasterPage: React.FC = () => {
                     <button
                       type="submit"
                       disabled={submittingQuickAssign}
-                      className="px-4 py-1.5 text-xs rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold disabled:opacity-50 transition-all shadow-sm"
+                      className="px-4 py-1.5 text-xs rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium disabled:opacity-50 transition-colors"
                     >
                       {submittingQuickAssign ? 'Assigning...' : 'Confirm Assignment'}
                     </button>
@@ -1483,20 +1438,17 @@ export const WorkMasterPage: React.FC = () => {
 
               {/* View Toggle */}
               <div className="flex items-center justify-between pt-2 border-t border-light-border/60 dark:border-dark-border/60">
-                <div className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
-                  <span>Assigned Personnel & Clients</span>
-                  <span className="text-[13px] font-normal text-light-textSecondary">
-                    (Which employee is doing this work for which clients)
-                  </span>
+                <div className="text-sm font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                  Assignments
                 </div>
 
-                <div className="inline-flex p-0.5 rounded-lg bg-light-bg dark:bg-dark-cardSecondary border border-light-border dark:border-dark-border text-xs">
+                <div className="inline-flex p-0.5 rounded-lg border border-light-border dark:border-dark-border text-xs">
                   <button
                     type="button"
                     onClick={() => setAssignmentsViewMode('employeeGrouped')}
-                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-normal transition-colors ${
                       assignmentsViewMode === 'employeeGrouped'
-                        ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
+                        ? 'bg-light-bg dark:bg-dark-cardSecondary text-brand-600 dark:text-brand-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
                     }`}
                   >
@@ -1505,9 +1457,9 @@ export const WorkMasterPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setAssignmentsViewMode('allList')}
-                    className={`px-3 py-1 rounded-md text-[13px] font-semibold transition-all ${
+                    className={`px-3 py-1 rounded-md text-[13px] font-normal transition-colors ${
                       assignmentsViewMode === 'allList'
-                        ? 'bg-white dark:bg-dark-card shadow-sm text-purple-600 dark:text-purple-300'
+                        ? 'bg-light-bg dark:bg-dark-cardSecondary text-brand-600 dark:text-brand-300'
                         : 'text-light-textSecondary dark:text-dark-textSecondary'
                     }`}
                   >
@@ -1522,9 +1474,9 @@ export const WorkMasterPage: React.FC = () => {
                   Loading assigned team members...
                 </div>
               ) : workAssignmentsList.length === 0 ? (
-                <div className="py-12 text-center rounded-xl bg-light-bg/40 dark:bg-dark-cardSecondary/30 border border-dashed border-light-border dark:border-dark-border">
+                <div className="py-12 text-center rounded-lg bg-light-bg/30 dark:bg-dark-cardSecondary/20 border border-light-border dark:border-dark-border">
                   <Users className="w-8 h-8 text-light-textMuted mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                  <p className="text-xs text-light-textPrimary dark:text-dark-textPrimary">
                     No employees have been assigned this work template yet.
                   </p>
                   <p className="text-[13px] text-light-textMuted mt-1">
@@ -1537,20 +1489,17 @@ export const WorkMasterPage: React.FC = () => {
                   {employeeSummaries.map((es) => (
                     <div
                       key={es.employeeId}
-                      className="rounded-xl border border-light-border dark:border-dark-border bg-light-bg/30 dark:bg-dark-cardSecondary/20 overflow-hidden"
+                      className="rounded-lg border border-light-border dark:border-dark-border bg-white dark:bg-dark-card overflow-hidden"
                     >
                       {/* Employee Header */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-light-bg/60 dark:bg-dark-cardSecondary/40 border-b border-light-border/60 dark:border-dark-border/60 gap-2">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 bg-light-bg/40 dark:bg-dark-cardSecondary/30 border-b border-light-border/60 dark:border-dark-border/60 gap-2">
                         <div className="flex items-center gap-2.5">
-                          <div className="w-7 h-7 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-xs">
+                          <div className="w-7 h-7 rounded-lg bg-light-bg dark:bg-dark-cardSecondary text-light-textSecondary dark:text-dark-textSecondary flex items-center justify-center text-xs">
                             {es.employeeName.charAt(0)}
                           </div>
                           <div>
-                            <div className="font-bold text-xs text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
+                            <div className="font-medium text-xs text-light-textPrimary dark:text-dark-textPrimary flex items-center gap-2">
                               <span>{es.employeeName}</span>
-                              <span className="font-mono text-[12px] text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-200 dark:border-purple-500/20">
-                                {es.employeeCode}
-                              </span>
                             </div>
                             <div className="text-[12px] text-light-textSecondary">
                               {es.designation} • {es.department}
@@ -1558,10 +1507,10 @@ export const WorkMasterPage: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs font-semibold text-purple-600 dark:text-purple-300 self-start sm:self-auto">
-                          <Briefcase className="w-3.5 h-3.5 text-purple-500" />
+                        <div className="inline-flex items-center gap-1.5 text-xs text-light-textSecondary dark:text-dark-textSecondary self-start sm:self-auto">
+                          <Briefcase className="w-3.5 h-3.5 text-light-textMuted" />
                           <span>
-                            {es.assignmentsCount} {es.assignmentsCount === 1 ? 'Assignment' : 'Assignments'} ({es.clients.length} {es.clients.length === 1 ? 'Client' : 'Clients'})
+                            {es.assignmentsCount} {es.assignmentsCount === 1 ? 'assignment' : 'assignments'} · {es.clients.length} {es.clients.length === 1 ? 'client' : 'clients'}
                           </span>
                         </div>
                       </div>
@@ -1575,23 +1524,20 @@ export const WorkMasterPage: React.FC = () => {
                           return (
                             <div
                               key={a._id}
-                              className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-light-bg/60 dark:hover:bg-dark-cardSecondary/40 transition-colors"
+                              className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-light-bg/30 dark:hover:bg-dark-cardSecondary/20 transition-colors"
                             >
                               <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                  <span className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                                  <span className="font-normal text-light-textPrimary dark:text-dark-textPrimary">
                                     {clientName}
                                   </span>
                                   <span className="font-mono text-[12px] text-light-textMuted">
                                     (PAN: {pan})
                                   </span>
-                                  <span className="font-mono text-[12px] text-brand-500 font-semibold">
-                                    {a.workCode}
-                                  </span>
                                 </div>
                                 {a.remarks && (
-                                  <p className="text-[13px] text-light-textSecondary italic">
-                                    "{a.remarks}"
+                                  <p className="text-[13px] text-light-textSecondary dark:text-dark-textSecondary">
+                                    {a.remarks}
                                   </p>
                                 )}
                               </div>
@@ -1603,25 +1549,7 @@ export const WorkMasterPage: React.FC = () => {
                                 </div>
 
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[12px] font-bold ${
-                                    a.priority === 'Urgent'
-                                      ? 'bg-status-red/10 text-status-red'
-                                      : a.priority === 'High'
-                                      ? 'bg-amber-500/10 text-amber-600'
-                                      : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
-                                  }`}
-                                >
-                                  {a.priority}
-                                </span>
-
-                                <span
-                                  className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
-                                    ['Completed', 'Filed'].includes(a.status)
-                                      ? 'bg-status-greenLight text-status-green'
-                                      : a.status === 'In Progress'
-                                      ? 'bg-purple-50 text-purple-600 dark:bg-purple-500/20'
-                                      : 'bg-amber-50 text-amber-600 dark:bg-amber-500/10'
-                                  }`}
+                                  className="text-xs text-light-textSecondary dark:text-dark-textSecondary"
                                 >
                                   {a.status}
                                 </span>
@@ -1646,15 +1574,13 @@ export const WorkMasterPage: React.FC = () => {
                 </div>
               ) : (
                 /* Flat All List View */
-                <div className="overflow-x-auto border border-light-border dark:border-dark-border rounded-xl">
+                <div className="overflow-x-auto border border-light-border dark:border-dark-border rounded-lg">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/50 dark:bg-dark-cardSecondary/50 text-[13px] font-semibold text-light-textSecondary">
-                        <th className="py-2.5 px-3">Work Code</th>
+                      <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/30 text-[13px] font-medium text-light-textSecondary">
                         <th className="py-2.5 px-3">Assigned Employee</th>
                         <th className="py-2.5 px-3">Client</th>
                         <th className="py-2.5 px-3">Due Date</th>
-                        <th className="py-2.5 px-3">Priority</th>
                         <th className="py-2.5 px-3">Status</th>
                         {canDeleteAssignments && <th className="py-2.5 px-3 text-right">Action</th>}
                       </tr>
@@ -1662,45 +1588,23 @@ export const WorkMasterPage: React.FC = () => {
                     <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
                       {workAssignmentsList.map((a: any) => (
                         <tr key={a._id} className="hover:bg-light-bg/40 dark:hover:bg-dark-cardSecondary/40">
-                          <td className="py-2.5 px-3 font-mono text-brand-500 font-semibold">{a.workCode}</td>
                           <td className="py-2.5 px-3">
-                            <div className="font-bold text-light-textPrimary dark:text-dark-textPrimary">
+                            <div className="font-normal text-light-textPrimary dark:text-dark-textPrimary">
                               {a.employeeId?.name || 'Employee'}
                             </div>
-                            <div className="text-[12px] text-light-textMuted font-mono">
-                              {a.employeeId?.employeeCode} • {a.employeeId?.designation}
+                            <div className="text-[12px] text-light-textMuted dark:text-dark-textMuted">
+                              {a.employeeId?.designation}
                             </div>
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
-                            <div className="font-semibold">{a.clientId?.businessName || a.clientId?.name}</div>
-                            <div className="text-[12px] text-light-textMuted font-mono">{a.clientId?.pan}</div>
+                            <div className="font-normal">{a.clientId?.businessName || a.clientId?.name}</div>
+                            <div className="text-[12px] text-light-textMuted dark:text-dark-textMuted font-mono">{a.clientId?.pan}</div>
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             {new Date(a.dueDate).toLocaleDateString()}
                           </td>
                           <td className="py-2.5 px-3">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[12px] font-bold ${
-                                a.priority === 'Urgent'
-                                  ? 'bg-status-red/10 text-status-red'
-                                  : a.priority === 'High'
-                                  ? 'bg-amber-500/10 text-amber-600'
-                                  : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
-                              }`}
-                            >
-                              {a.priority}
-                            </span>
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span
-                              className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
-                                ['Completed', 'Filed'].includes(a.status)
-                                  ? 'bg-status-greenLight text-status-green'
-                                  : 'bg-amber-50 text-amber-600'
-                              }`}
-                            >
-                              {a.status}
-                            </span>
+                            <span className="text-light-textSecondary dark:text-dark-textSecondary">{a.status}</span>
                           </td>
                           {canDeleteAssignments && (
                             <td className="py-2.5 px-3 text-right">
@@ -1709,7 +1613,7 @@ export const WorkMasterPage: React.FC = () => {
                                 onClick={() => handleDeleteWorkAssignment(a._id, a.workCode)}
                                 title="Delete assignment"
                                 aria-label={`Delete assignment ${a.workCode}`}
-                                className="rounded-md p-1.5 text-light-textMuted transition-colors hover:bg-rose-50 hover:text-status-red dark:hover:bg-rose-500/10"
+                                className="rounded-md p-1.5 text-light-textMuted transition-colors hover:bg-light-bg hover:text-light-textPrimary dark:hover:bg-dark-cardSecondary dark:hover:text-dark-textPrimary"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -1721,12 +1625,59 @@ export const WorkMasterPage: React.FC = () => {
                   </table>
                 </div>
               )}
+
+              {selectedWorkRequiredDocuments.length > 0 && (
+                <div className="border-b border-light-border pb-3 dark:border-dark-border">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="text-xs font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                      Required Documents
+                    </div>
+                    <span className="text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                      {selectedWorkRequiredDocuments.length} document{selectedWorkRequiredDocuments.length === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <ol className="list-decimal space-y-1 pl-5 text-xs text-light-textSecondary marker:text-light-textMuted dark:text-dark-textSecondary">
+                    {selectedWorkRequiredDocuments.map((documentName) => {
+                      const uploadedFile = selectedWorkForAssignments?.defaultDocumentFiles?.find(
+                        (file) => file.documentName === documentName
+                      );
+
+                      return (
+                        <li key={documentName} className="pl-1">
+                          {uploadedFile ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenRequiredDocument(uploadedFile)}
+                              title={`Open ${uploadedFile.fileName}`}
+                              className="inline-flex max-w-full items-center gap-1.5 py-1 text-left transition-colors hover:text-brand-600 hover:underline dark:hover:text-brand-300"
+                            >
+                              <FileText className="h-4 w-4 shrink-0" />
+                              <span className="flex min-w-0 flex-col">
+                                <span className="truncate">{documentName}</span>
+                                <span className="truncate text-[10px] text-light-textMuted dark:text-dark-textMuted">
+                                  {uploadedFile.fileName}
+                                </span>
+                              </span>
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 py-1">
+                              <FileText className="h-4 w-4 shrink-0" />
+                              <span>{documentName} — file not uploaded</span>
+                            </span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
+
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 border-t border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/30 flex items-center justify-between">
+            <div className="p-4 border-t border-light-border dark:border-dark-border bg-white dark:bg-dark-card flex items-center justify-between">
               <span className="text-[13px] text-light-textSecondary">
-                Total {totalWorkAssignmentsCount} active tasks distributed across {employeeSummaries.length} team members
+                {totalWorkAssignmentsCount} active {totalWorkAssignmentsCount === 1 ? 'task' : 'tasks'} · {employeeSummaries.length} team {employeeSummaries.length === 1 ? 'member' : 'members'}
               </span>
               <button
                 type="button"
@@ -1738,6 +1689,18 @@ export const WorkMasterPage: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {editingTaxRule && (
+        <TaxRuleModal
+          isOpen={Boolean(editingTaxRule)}
+          onClose={() => setEditingTaxRule(null)}
+          onSuccess={() => {
+            fetchAvailableTaxes();
+            fetchWorks();
+          }}
+          editingTax={editingTaxRule}
+        />
       )}
     </div>
   );

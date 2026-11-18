@@ -640,7 +640,7 @@ export const EmployeeMasterPage: React.FC = () => {
                       </select>
                     </div>
 
-                    <div>
+                    <div className="sm:col-span-2">
                       <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                         Due Date *
                       </label>
@@ -653,21 +653,6 @@ export const EmployeeMasterPage: React.FC = () => {
                       />
                     </div>
 
-                    <div>
-                      <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                        Priority
-                      </label>
-                      <select
-                        value={assignFormData.priority}
-                        onChange={(e) => setAssignFormData({ ...assignFormData, priority: e.target.value as any })}
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Urgent">Urgent</option>
-                      </select>
-                    </div>
                   </div>
 
                   <div>
@@ -828,18 +813,6 @@ export const EmployeeMasterPage: React.FC = () => {
                                 </div>
 
                                 <span
-                                  className={`px-2 py-0.5 rounded text-[12px] font-bold ${
-                                    w.priority === 'Urgent'
-                                      ? 'bg-status-red/10 text-status-red'
-                                      : w.priority === 'High'
-                                      ? 'bg-amber-500/10 text-amber-600'
-                                      : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
-                                  }`}
-                                >
-                                  {w.priority}
-                                </span>
-
-                                <span
                                   className={`px-2.5 py-0.5 rounded-full text-[12px] font-bold ${
                                     ['Completed', 'Filed'].includes(w.status)
                                       ? 'bg-status-greenLight text-status-green'
@@ -868,7 +841,6 @@ export const EmployeeMasterPage: React.FC = () => {
                         <th className="py-2.5 px-3">Work Name</th>
                         <th className="py-2.5 px-3">Client</th>
                         <th className="py-2.5 px-3">Due Date</th>
-                        <th className="py-2.5 px-3">Priority</th>
                         <th className="py-2.5 px-3">Status</th>
                       </tr>
                     </thead>
@@ -885,19 +857,6 @@ export const EmployeeMasterPage: React.FC = () => {
                           </td>
                           <td className="py-2.5 px-3 text-light-textSecondary">
                             {new Date(w.dueDate).toLocaleDateString()}
-                          </td>
-                          <td className="py-2.5 px-3">
-                            <span
-                              className={`px-2 py-0.5 rounded text-[12px] font-bold ${
-                                w.priority === 'Urgent'
-                                  ? 'bg-status-red/10 text-status-red'
-                                  : w.priority === 'High'
-                                  ? 'bg-amber-500/10 text-amber-600'
-                                  : 'bg-light-border dark:bg-dark-border text-light-textSecondary'
-                              }`}
-                            >
-                              {w.priority}
-                            </span>
                           </td>
                           <td className="py-2.5 px-3">
                             <span
@@ -1104,34 +1063,16 @@ export const EmployeeMasterPage: React.FC = () => {
                         </select>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                            Due Date
-                          </label>
-                          <input
-                            type="date"
-                            value={formData.initialDueDate}
-                            onChange={(e) => setFormData({ ...formData, initialDueDate: e.target.value })}
-                            className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
-                            Priority
-                          </label>
-                          <select
-                            value={formData.initialPriority}
-                            onChange={(e) => setFormData({ ...formData, initialPriority: e.target.value as any })}
-                            className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none"
-                          >
-                            <option value="Low">Low</option>
-                            <option value="Medium">Medium</option>
-                            <option value="High">High</option>
-                            <option value="Urgent">Urgent</option>
-                          </select>
-                        </div>
+                      <div>
+                        <label className="block font-semibold mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          Due Date
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.initialDueDate}
+                          onChange={(e) => setFormData({ ...formData, initialDueDate: e.target.value })}
+                          className="w-full px-3 py-1.5 rounded-lg bg-white dark:bg-dark-bg border border-light-border dark:border-dark-border focus:outline-none"
+                        />
                       </div>
                     </div>
                   )}

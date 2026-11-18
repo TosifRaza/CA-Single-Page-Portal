@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   X,
@@ -16,6 +16,7 @@ import {
   FolderTree,
   Building,
   Check,
+  ChevronDown,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -130,6 +131,19 @@ const formatScheduleDate = (value: string): string => {
   return Number.isNaN(date.getTime())
     ? '—'
     : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const shiftScheduleDate = (value: string | undefined, days: number): string | undefined => {
+  if (!value) return undefined;
+  const date = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return undefined;
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+};
+
+const previousScheduleDate = (values: Array<string | undefined>): string | undefined => {
+  const firstDate = values.filter((value): value is string => Boolean(value)).sort()[0];
+  return shiftScheduleDate(firstDate, -1);
 };
 
 const buildFilingPeriodSchedule = (
@@ -432,6 +446,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [hasEditedFilingSchedule, setHasEditedFilingSchedule] = useState(false);
   const [applicableClientTypes, setApplicableClientTypes] = useState<string[]>([]);
   const [otherBusinessCategory, setOtherBusinessCategory] = useState('');
+  const [isBusinessCategoryOpen, setIsBusinessCategoryOpen] = useState(false);
+  const businessCategoryPickerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string>('Active');
 
   // Section B: Timeline & Due Date
@@ -725,6 +741,17 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     }
   }, [editingTax, defaultTaxGroup, isOpen]);
 
+  useEffect(() => {
+    if (!isBusinessCategoryOpen) return;
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!businessCategoryPickerRef.current?.contains(event.target as Node)) {
+        setIsBusinessCategoryOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', closeOnOutsideClick);
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick);
+  }, [isBusinessCategoryOpen]);
+
   if (!isOpen) return null;
 
   const reminderOptions = [30, 15, 7, 3, 1];
@@ -742,6 +769,15 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     );
   };
 
+  const selectBusinessCategory = (category: string) => {
+    setApplicableClientTypes(category ? [category] : []);
+    if (category !== 'Other Legal Entity' && category !== 'Other') {
+      setOtherBusinessCategory('');
+    }
+    setIsBusinessCategoryOpen(false);
+    setIsDirty(true);
+  };
+
   const confirmScheduleRegeneration = (changedSetting: string): boolean => {
     if (!hasEditedFilingSchedule) return true;
     return window.confirm(
@@ -754,6 +790,44 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     field: keyof FilingPeriodScheduleItem,
     value: string
   ) => {
+    const period = filingPeriodSchedule[index];
+    if (!period) return;
+
+    if (field === 'periodFrom' && value && period.periodTo && value >= period.periodTo) {
+      toast.error('Period From must be earlier than Period To.');
+      return;
+    }
+    if (field === 'periodTo' && value) {
+      if (period.periodFrom && value <= period.periodFrom) {
+        toast.error('Period To must be later than Period From.');
+        return;
+      }
+      const laterDates = [period.filingDate, period.submissionDate, period.reconciliationDate]
+        .filter(Boolean);
+      if (laterDates.some((date) => value >= date)) {
+        toast.error('Period To must be earlier than the filing, submission, and reconciliation dates.');
+        return;
+      }
+    }
+    if (field === 'filingDate' && value) {
+      if (period.periodTo && value <= period.periodTo) {
+        toast.error('Filing Date must be after Period To.');
+        return;
+      }
+      if (period.extendedDate && value >= period.extendedDate) {
+        toast.error('Filing Date must be earlier than Extended Due Date.');
+        return;
+      }
+    }
+    if ((field === 'submissionDate' || field === 'reconciliationDate') && value && period.periodTo && value <= period.periodTo) {
+      toast.error(`${field === 'submissionDate' ? 'Submission' : 'Reconciliation'} Date must be after Period To.`);
+      return;
+    }
+    if (field === 'extendedDate' && value && period.filingDate && value <= period.filingDate) {
+      toast.error('Extended Due Date must be later than Filing Date.');
+      return;
+    }
+
     setFilingPeriodSchedule((periods) =>
       periods.map((period, periodIndex) =>
         periodIndex === index ? { ...period, [field]: value } : period
@@ -776,6 +850,12 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     const fromDate = new Date(`${period.periodFrom}T00:00:00`);
     const toDate = new Date(`${period.periodTo}T00:00:00`);
     const filingDate = new Date(`${period.filingDate}T00:00:00`);
+    const submissionDate = period.submissionDate
+      ? new Date(`${period.submissionDate}T00:00:00`)
+      : null;
+    const reconciliationDate = period.reconciliationDate
+      ? new Date(`${period.reconciliationDate}T00:00:00`)
+      : null;
     const extendedDate = period.extendedDate
       ? new Date(`${period.extendedDate}T00:00:00`)
       : null;
@@ -788,8 +868,20 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       toast.error('Enter a valid Filing Date.');
       return;
     }
-    if (extendedDate && (Number.isNaN(extendedDate.getTime()) || extendedDate < filingDate)) {
-      toast.error('Extended Due Date must be on or after the Filing Date.');
+    if (filingDate <= toDate) {
+      toast.error('Filing Date must be after Period To.');
+      return;
+    }
+    if (submissionDate && (Number.isNaN(submissionDate.getTime()) || submissionDate <= toDate)) {
+      toast.error('Submission Date must be after Period To.');
+      return;
+    }
+    if (reconciliationDate && (Number.isNaN(reconciliationDate.getTime()) || reconciliationDate <= toDate)) {
+      toast.error('Reconciliation Date must be after Period To.');
+      return;
+    }
+    if (extendedDate && (Number.isNaN(extendedDate.getTime()) || extendedDate <= filingDate)) {
+      toast.error('Extended Due Date must be later than the Filing Date.');
       return;
     }
 
@@ -840,14 +932,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       return;
     }
 
-    if (
-      savedFilingPeriodFlags.length !== filingPeriodSchedule.length ||
-      savedFilingPeriodFlags.some((isSaved) => !isSaved)
-    ) {
-      toast.error('Save each filing period before saving the Tax Rule.');
-      return;
-    }
-
     if (requiresCustomBusinessCategory && !otherBusinessCategory.trim()) {
       toast.error('Please specify the other business category.');
       return;
@@ -857,6 +941,12 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       const fromDate = new Date(`${period.periodFrom}T00:00:00`);
       const toDate = new Date(`${period.periodTo}T00:00:00`);
       const filingDate = period.filingDate ? new Date(`${period.filingDate}T00:00:00`) : null;
+      const submissionDate = period.submissionDate
+        ? new Date(`${period.submissionDate}T00:00:00`)
+        : null;
+      const reconciliationDate = period.reconciliationDate
+        ? new Date(`${period.reconciliationDate}T00:00:00`)
+        : null;
       const extendedDate = period.extendedDate
         ? new Date(`${period.extendedDate}T00:00:00`)
         : null;
@@ -867,15 +957,22 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         Number.isNaN(fromDate.getTime()) ||
         Number.isNaN(toDate.getTime()) ||
         fromDate >= toDate ||
+        !filingDate ||
+        Number.isNaN(filingDate.getTime()) ||
+        filingDate <= toDate ||
+        (submissionDate &&
+          (Number.isNaN(submissionDate.getTime()) || submissionDate <= toDate)) ||
+        (reconciliationDate &&
+          (Number.isNaN(reconciliationDate.getTime()) || reconciliationDate <= toDate)) ||
         (extendedDate &&
           (Number.isNaN(extendedDate.getTime()) ||
             !filingDate ||
-            extendedDate < filingDate))
+            extendedDate <= filingDate))
       );
     });
     if (filingPeriodSchedule.length === 0 || invalidPeriod) {
       toast.error(
-        'Each period needs valid From and To dates, a Filing Date, and any Extended Due Date must be on or after the Filing Date.'
+        'Each period needs valid dates: From before To, filing/submission/reconciliation after To, and any Extended Due Date after Filing Date.'
       );
       return;
     }
@@ -1016,9 +1113,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
             <h2 className="text-base font-bold text-light-textPrimary dark:text-dark-textPrimary">
               {editingTax ? 'Edit Tax Rule & Compliance' : 'Add New Tax Rule & Compliance'}
             </h2>
-            <p className="text-xs text-light-textSecondary dark:text-dark-textSecondary font-normal">
-              Configure statutory compliance rules, filing timelines & reconciliations
-            </p>
           </div>
           <button
             onClick={handleCancel}
@@ -1142,45 +1236,89 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     </span>
                   )}
                 </div>
-                <select
-                  value={selectedBusinessCategory}
-                  onChange={(e) => {
-                    const category = e.target.value;
-                    setApplicableClientTypes(category ? [category] : []);
-                    if (category !== 'Other Legal Entity' && category !== 'Other') {
-                      setOtherBusinessCategory('');
-                    }
-                    setIsDirty(true);
+                <div
+                  ref={businessCategoryPickerRef}
+                  className="relative"
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') setIsBusinessCategoryOpen(false);
                   }}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-light-bg dark:bg-dark-bg border border-light-border dark:border-dark-border text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 font-normal"
                 >
-                  <option value="">-- Select Business Category --</option>
-                  {hasLegacyBusinessCategory && (
-                    <optgroup label="Previously Saved Category">
-                      <option value={selectedBusinessCategory}>{selectedBusinessCategory}</option>
-                    </optgroup>
-                  )}
-                  {BUSINESS_CATEGORY_GROUPS.map((group) => (
-                    <optgroup key={group.label} label={group.label}>
-                      {group.options.map((category) => {
-                        const isRestrictedForRoc =
-                          taxGroup === 'ROC' &&
-                          group.label !== 'Companies' &&
-                          category !== 'Limited Liability Partnership (LLP)';
+                  <button
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={isBusinessCategoryOpen}
+                    onClick={() => setIsBusinessCategoryOpen((open) => !open)}
+                    className="flex w-full items-center justify-between gap-3 rounded-xl border border-light-border bg-light-bg px-3.5 py-2.5 text-left text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
+                  >
+                    <span className="truncate text-xs font-normal">
+                      {selectedBusinessCategory || '-- Select Business Category --'}
+                    </span>
+                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${isBusinessCategoryOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-                        return (
-                          <option
-                            key={category}
-                            value={category}
-                            disabled={isRestrictedForRoc}
+                  {isBusinessCategoryOpen && (
+                    <div
+                      role="listbox"
+                      aria-label="Applicable Business Category"
+                      className="absolute left-0 right-0 top-full z-[70] mt-1 max-h-64 overflow-y-auto rounded-xl border border-light-border bg-white py-1 shadow-xl dark:border-dark-border dark:bg-dark-card"
+                    >
+                      <button
+                        type="button"
+                        role="option"
+                        aria-selected={!selectedBusinessCategory}
+                        onClick={() => selectBusinessCategory('')}
+                        className="w-full px-3.5 py-2 text-left text-xs font-normal text-light-textMuted hover:bg-light-bg dark:text-dark-textMuted dark:hover:bg-dark-cardSecondary"
+                      >
+                        -- Select Business Category --
+                      </button>
+
+                      {hasLegacyBusinessCategory && (
+                        <div role="group" aria-label="Previously Saved Category">
+                          <div className="sticky top-0 bg-light-bg px-3.5 py-1.5 text-[11px] font-medium text-light-textMuted dark:bg-dark-cardSecondary dark:text-dark-textMuted">
+                            Previously Saved Category
+                          </div>
+                          <button
+                            type="button"
+                            role="option"
+                            aria-selected="true"
+                            onClick={() => selectBusinessCategory(selectedBusinessCategory)}
+                            className="w-full px-3.5 py-2 text-left text-xs font-normal text-light-textPrimary hover:bg-light-bg dark:text-dark-textPrimary dark:hover:bg-dark-cardSecondary"
                           >
-                            {category}
-                          </option>
-                        );
-                      })}
-                    </optgroup>
-                  ))}
-                </select>
+                            {selectedBusinessCategory}
+                          </button>
+                        </div>
+                      )}
+
+                      {BUSINESS_CATEGORY_GROUPS.map((group) => (
+                        <div key={group.label} role="group" aria-label={group.label}>
+                          <div className="sticky top-0 bg-light-bg px-3.5 py-1.5 text-[11px] font-medium text-light-textMuted dark:bg-dark-cardSecondary dark:text-dark-textMuted">
+                            {group.label}
+                          </div>
+                          {group.options.map((category) => {
+                            const isRestrictedForRoc =
+                              taxGroup === 'ROC' &&
+                              group.label !== 'Companies' &&
+                              category !== 'Limited Liability Partnership (LLP)';
+
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                role="option"
+                                aria-selected={selectedBusinessCategory === category}
+                                disabled={isRestrictedForRoc}
+                                onClick={() => selectBusinessCategory(category)}
+                                className="w-full px-3.5 py-2 text-left text-xs font-normal text-light-textPrimary hover:bg-light-bg disabled:cursor-not-allowed disabled:opacity-40 dark:text-dark-textPrimary dark:hover:bg-dark-cardSecondary"
+                              >
+                                {category}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 {requiresCustomBusinessCategory && (
                   <div className="mt-3">
                     <label className="mb-1 block font-normal text-light-textPrimary dark:text-dark-textPrimary">
@@ -1446,6 +1584,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             type="date"
                             required
                             value={period.periodFrom}
+                            max={shiftScheduleDate(period.periodTo, -1)}
                             onChange={(e) => updateFilingPeriod(index, 'periodFrom', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1458,7 +1597,12 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             type="date"
                             required
                             value={period.periodTo}
-                            min={period.periodFrom || undefined}
+                            min={shiftScheduleDate(period.periodFrom, 1)}
+                            max={previousScheduleDate([
+                              period.filingDate,
+                              period.submissionDate,
+                              period.reconciliationDate,
+                            ])}
                             onChange={(e) => updateFilingPeriod(index, 'periodTo', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1471,6 +1615,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             type="date"
                             required
                             value={period.filingDate}
+                            min={shiftScheduleDate(period.periodTo, 1)}
+                            max={shiftScheduleDate(period.extendedDate, -1)}
                             onChange={(e) => updateFilingPeriod(index, 'filingDate', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1482,6 +1628,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           <input
                             type="date"
                             value={period.submissionDate}
+                            min={shiftScheduleDate(period.periodTo, 1)}
                             onChange={(e) => updateFilingPeriod(index, 'submissionDate', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1493,6 +1640,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           <input
                             type="date"
                             value={period.reconciliationDate}
+                            min={shiftScheduleDate(period.periodTo, 1)}
                             onChange={(e) => updateFilingPeriod(index, 'reconciliationDate', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1504,6 +1652,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           <input
                             type="date"
                             value={period.extendedDate}
+                            min={shiftScheduleDate(period.filingDate, 1)}
                             onChange={(e) => updateFilingPeriod(index, 'extendedDate', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />

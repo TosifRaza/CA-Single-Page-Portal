@@ -57,16 +57,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }`}
       >
         {/* Logo Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-light-border/60 dark:border-dark-border/60">
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-brand-600 text-white shadow-md shadow-blue-500/20 font-bold text-lg tracking-wider">
-            <span>CA</span>
-            <span className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-status-green rounded-full border-2 border-white dark:border-dark-sidebar" />
+        <div className="flex items-center gap-3.5 px-5 py-4 border-b border-light-border/60 bg-white/35 dark:border-dark-border/60 dark:bg-dark-sidebar/40">
+          <div className="relative isolate flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-gradient-to-br from-blue-500 via-brand-500 to-indigo-600 text-white shadow-[0_8px_18px_rgba(22,117,255,0.24)] ring-1 ring-white/80 dark:ring-white/10">
+            <span className="absolute inset-[1px] rounded-[13px] border border-white/25" />
+            <span className="relative text-[15px] font-extrabold tracking-[-0.04em]">CA</span>
+            <span className="absolute -bottom-1 -right-1 h-3 w-3 rounded-full border-[2.5px] border-light-sidebar bg-status-green dark:border-dark-sidebar" />
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-[19px] tracking-tight text-light-textPrimary dark:text-dark-textPrimary leading-tight">
-              CA ProFlow
+          <div className="flex min-w-0 flex-col">
+            <span className="text-[18px] font-bold leading-tight tracking-[-0.035em] text-light-textPrimary dark:text-dark-textPrimary">
+              CA <span className="text-brand-600 dark:text-brand-400">ProFlow</span>
             </span>
-            <span className="text-[13px] font-medium text-light-textSecondary dark:text-dark-textSecondary tracking-wide">
+            <span className="mt-1 text-[11px] font-medium tracking-[0.045em] text-light-textSecondary dark:text-dark-textSecondary">
               Simplifying Compliance
             </span>
           </div>

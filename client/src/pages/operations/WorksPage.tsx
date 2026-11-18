@@ -3,7 +3,6 @@ import { NavLink } from 'react-router-dom';
 import {
   Search,
   Plus,
-  Filter,
   CheckCircle2,
   Clock,
   AlertTriangle,
@@ -19,7 +18,6 @@ export const WorksPage: React.FC = () => {
   const [works, setWorks] = useState<WorkAssignmentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('All');
-  const [priorityFilter, setPriorityFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(10);
@@ -32,7 +30,6 @@ export const WorksPage: React.FC = () => {
       setLoading(true);
       const params = new URLSearchParams();
       if (statusTab !== 'All') params.append('status', statusTab);
-      if (priorityFilter !== 'All') params.append('priority', priorityFilter);
       if (search) params.append('search', search);
       params.append('page', page.toString());
       params.append('limit', '10');
@@ -52,7 +49,7 @@ export const WorksPage: React.FC = () => {
 
   useEffect(() => {
     fetchWorks();
-  }, [statusTab, priorityFilter, search, page]);
+  }, [statusTab, search, page]);
 
   const handleUpdateStatus = async (id: string, newStatus: string) => {
     try {
@@ -61,19 +58,6 @@ export const WorksPage: React.FC = () => {
       fetchWorks();
     } catch (err) {
       toast.error('Failed to update status');
-    }
-  };
-
-  const getPriorityBadge = (prio: string) => {
-    switch (prio) {
-      case 'Urgent':
-        return 'bg-status-red/10 text-status-red border-status-red/30';
-      case 'High':
-        return 'bg-status-orange/10 text-status-orange border-status-orange/30';
-      case 'Low':
-        return 'bg-light-border/60 text-light-textMuted border-light-border';
-      default:
-        return 'bg-brand-50 text-brand-600 border-brand-200 dark:bg-brand-500/10 dark:text-blue-400';
     }
   };
 
@@ -134,22 +118,6 @@ export const WorksPage: React.FC = () => {
             />
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <select
-              value={priorityFilter}
-              onChange={(e) => {
-                setPriorityFilter(e.target.value);
-                setPage(1);
-              }}
-              className="px-3 py-1.5 text-xs bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-xl text-light-textPrimary dark:text-dark-textPrimary focus:outline-none"
-            >
-              <option value="All">All Priorities</option>
-              <option value="Low">Low</option>
-              <option value="Medium">Medium</option>
-              <option value="High">High</option>
-              <option value="Urgent">Urgent</option>
-            </select>
-          </div>
         </div>
 
         {/* Works Table */}
@@ -159,9 +127,7 @@ export const WorksPage: React.FC = () => {
               <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4">Work Code</th>
                 <th className="py-3 px-4">Client</th>
-                <th className="py-3 px-4">Work Template</th>
                 <th className="py-3 px-4">Assignee</th>
-                <th className="py-3 px-4">Priority</th>
                 <th className="py-3 px-4">Due Date</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Update Status</th>
@@ -176,20 +142,8 @@ export const WorksPage: React.FC = () => {
                   <td className="py-3 px-4 font-semibold text-light-textPrimary dark:text-dark-textPrimary">
                     {w.clientId?.businessName || w.clientId?.name || 'Client'}
                   </td>
-                  <td className="py-3 px-4 font-medium text-light-textPrimary dark:text-dark-textPrimary">
-                    {w.workMasterId?.workName || 'Statutory Filing'}
-                  </td>
                   <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary">
                     {w.employeeId?.name || 'Unassigned'}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[12px] font-bold border ${getPriorityBadge(
-                        w.priority
-                      )}`}
-                    >
-                      {w.priority}
-                    </span>
                   </td>
                   <td className="py-3 px-4 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
                     {new Date(w.dueDate).toLocaleDateString()}
