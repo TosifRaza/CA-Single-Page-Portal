@@ -127,7 +127,22 @@ export const updateTax = async (req: Request, res: Response, next: NextFunction)
   try {
     const { id } = req.params;
     const organizationId = req.user!.organizationId;
-    const validated = taxMasterUpdateSchema.parse(req.body);
+    const existingTax = await TaxMaster.findOne({ _id: id, organizationId });
+    if (!existingTax) {
+      res.status(404).json({ success: false, message: 'Tax record not found' });
+      return;
+    }
+
+    const validated = taxMasterUpdateSchema.parse({
+      ...req.body,
+      frequency:
+        req.body.frequency ??
+        req.body.filingFrequency ??
+        existingTax.frequency ??
+        existingTax.filingFrequency,
+      applicableFinancialYear:
+        req.body.applicableFinancialYear ?? existingTax.applicableFinancialYear,
+    });
 
     const tax = await TaxMaster.findOneAndUpdate(
       { _id: id, organizationId },

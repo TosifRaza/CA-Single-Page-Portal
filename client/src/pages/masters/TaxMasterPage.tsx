@@ -23,6 +23,43 @@ import { TaxRuleModal } from '../../components/tax/TaxRuleModal';
 import { ExtendDeadlineModal } from '../../components/tax/ExtendDeadlineModal';
 import { ReconciliationModal } from '../../components/tax/ReconciliationModal';
 
+const EXPECTED_FILING_PERIODS: Record<string, number> = {
+  Monthly: 12,
+  Quarterly: 4,
+  'Half-Yearly': 2,
+  Yearly: 1,
+  'One Time': 1,
+};
+
+const getFinancialYearMonths = (financialYear?: string) => {
+  const startYear = Number(financialYear?.match(/\d{4}/)?.[0]) || new Date().getFullYear();
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const date = new Date(Date.UTC(startYear, index + 3, 1));
+    const key = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, '0')}`;
+    const label = date.toLocaleDateString('en-IN', {
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'UTC',
+    });
+
+    return { key, label };
+  });
+};
+
+const countConfiguredSchedulePeriods = (
+  periods: NonNullable<TaxMasterItem['filingSchedule']>,
+  frequency: string
+) => {
+  const configuredPeriods = periods.filter(
+    (period) => Boolean(period.periodFrom && period.periodTo && period.filingDate)
+  );
+
+  return frequency === 'Monthly'
+    ? new Set(configuredPeriods.map((period) => period.periodFrom.slice(0, 7))).size
+    : configuredPeriods.length;
+};
+
 export const TaxMasterPage: React.FC = () => {
   // Main View: 'rules' or 'filings'
   const [mainView] = useState<'rules' | 'filings'>('rules');
@@ -250,7 +287,7 @@ export const TaxMasterPage: React.FC = () => {
     });
   };
 
-  const selectedTaxScheduleRows = selectedTaxSchedule
+  const selectedTaxScheduleRows: NonNullable<TaxMasterItem['filingSchedule']> = selectedTaxSchedule
     ? selectedTaxSchedule.filingSchedule?.length
       ? selectedTaxSchedule.filingSchedule
       : selectedTaxSchedule.periodFrom ||
@@ -262,10 +299,36 @@ export const TaxMasterPage: React.FC = () => {
               periodTo: selectedTaxSchedule.periodTo || '',
               filingDate: selectedTaxSchedule.originalDueDate || '',
               extendedDate: selectedTaxSchedule.extendedDueDate,
+              extensionReason: selectedTaxSchedule.extensionReason,
             },
           ]
         : []
     : [];
+
+  const selectedTaxFrequency = selectedTaxSchedule
+    ? selectedTaxSchedule.frequency || selectedTaxSchedule.filingFrequency || 'Monthly'
+    : '';
+  const expectedSelectedSchedulePeriods = EXPECTED_FILING_PERIODS[selectedTaxFrequency] || 0;
+  const configuredSelectedSchedulePeriods = countConfiguredSchedulePeriods(
+    selectedTaxScheduleRows,
+    selectedTaxFrequency
+  );
+  const missingMonthlyPeriods =
+    selectedTaxFrequency === 'Monthly'
+      ? getFinancialYearMonths(selectedTaxSchedule?.applicableFinancialYear).filter((month) =>
+          !selectedTaxScheduleRows.some(
+            (period) =>
+              period.periodFrom &&
+              period.periodTo &&
+              period.filingDate &&
+              period.periodFrom.slice(0, 7) === month.key
+          )
+        )
+      : [];
+  const remainingSelectedSchedulePeriods = Math.max(
+    0,
+    expectedSelectedSchedulePeriods - configuredSelectedSchedulePeriods
+  );
 
   return (
     <div className="space-y-5 animate-in fade-in duration-200">
@@ -398,8 +461,26 @@ export const TaxMasterPage: React.FC = () => {
                   </tr>
                 ) : (
                   taxes.map((tax) => {
-                    const scheduleCount = tax.filingSchedule?.length ||
-                      (tax.periodFrom || tax.periodTo || tax.originalDueDate ? 1 : 0);
+                    const taxFrequency = tax.frequency || tax.filingFrequency || 'Monthly';
+                    const taxScheduleRows: NonNullable<TaxMasterItem['filingSchedule']> = tax.filingSchedule?.length
+                      ? tax.filingSchedule
+                      : tax.periodFrom || tax.periodTo || tax.originalDueDate
+                        ? [{
+                            periodFrom: tax.periodFrom || '',
+                            periodTo: tax.periodTo || '',
+                            filingDate: tax.originalDueDate || '',
+                          }]
+                        : [];
+                    const scheduleCount = taxScheduleRows.length;
+                    const configuredScheduleCount = countConfiguredSchedulePeriods(
+                      taxScheduleRows,
+                      taxFrequency
+                    );
+                    const expectedScheduleCount = EXPECTED_FILING_PERIODS[taxFrequency] || 0;
+                    const remainingScheduleCount = Math.max(
+                      0,
+                      expectedScheduleCount - configuredScheduleCount
+                    );
 
                   return (
                     <tr
@@ -432,18 +513,35 @@ export const TaxMasterPage: React.FC = () => {
                         )}
                       </td>
                       <td className="py-3 px-3.5 text-light-textSecondary dark:text-dark-textSecondary whitespace-nowrap">
-                        {tax.frequency || tax.filingFrequency || 'Monthly'}
+                        {taxFrequency}
                       </td>
-                      <td className="py-3 px-3.5 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => openTaxSchedule(tax)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-brand-200 dark:border-brand-500/30 bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300 font-semibold hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
-                        >
-                          <Calendar className="w-3.5 h-3.5" />
-                          Show Dates
-                          <span className="text-[11px] opacity-75">({scheduleCount})</span>
-                        </button>
+                      <td className="py-3 px-3.5">
+                        <div className="flex flex-col items-start gap-1">
+                          <button
+                            type="button"
+                            onClick={() => openTaxSchedule(tax)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-brand-200 bg-brand-50 px-2.5 py-1.5 font-semibold text-brand-600 transition-colors hover:bg-brand-100 dark:border-brand-500/30 dark:bg-brand-500/10 dark:text-brand-300 dark:hover:bg-brand-500/20"
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            Show Dates
+                            <span className="text-[11px] opacity-75">({scheduleCount})</span>
+                          </button>
+                          {remainingScheduleCount > 0 && (
+                            <div className="flex flex-wrap items-center gap-x-2 text-[11px] leading-tight">
+                              <span className="text-amber-700 dark:text-amber-300">
+                                <AlertTriangle className="mr-1 inline h-3 w-3" />
+                                {configuredScheduleCount}/{expectedScheduleCount} set · {remainingScheduleCount} due
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => openEditModal(tax)}
+                                className="text-brand-600 hover:underline dark:text-brand-300"
+                              >
+                                Complete schedule
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
                         <span
@@ -811,6 +909,37 @@ export const TaxMasterPage: React.FC = () => {
             </div>
 
             <div className="overflow-y-auto p-4 sm:p-6">
+              {remainingSelectedSchedulePeriods > 0 && expectedSelectedSchedulePeriods > 0 && (
+                <div className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/70 p-3 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex min-w-0 items-start gap-2.5">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div>
+                      <p className="text-sm">
+                        {configuredSelectedSchedulePeriods} of {expectedSelectedSchedulePeriods}{' '}
+                        {selectedTaxFrequency.toLowerCase()} filing periods have dates; {remainingSelectedSchedulePeriods} still need dates.
+                      </p>
+                      {missingMonthlyPeriods.length > 0 && (
+                        <p className="mt-1 text-xs text-amber-800 dark:text-amber-200">
+                          Dates due for: {missingMonthlyPeriods.map((month) => month.label).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const taxToEdit = selectedTaxSchedule;
+                      if (!taxToEdit) return;
+                      setSelectedTaxSchedule(null);
+                      openEditModal(taxToEdit);
+                    }}
+                    className="shrink-0 rounded-lg bg-amber-600 px-3 py-2 text-xs text-white transition-colors hover:bg-amber-700"
+                  >
+                    Fill remaining dates
+                  </button>
+                </div>
+              )}
+
               {selectedTaxScheduleRows.length > 0 ? (
                 <div className="overflow-hidden rounded-xl border border-light-border dark:border-dark-border">
                   <table className="w-full table-fixed text-left text-sm">
@@ -829,7 +958,7 @@ export const TaxMasterPage: React.FC = () => {
                         <th className="break-words px-2 py-3 sm:px-3">Filing Date</th>
                         <th className="break-words px-2 py-3 sm:px-3">Submission Date</th>
                         <th className="break-words px-2 py-3 sm:px-3">Reconciliation Date</th>
-                        <th className="break-words px-2 py-3 sm:px-3">Extended Due Date</th>
+                        <th className="break-words px-2 py-3 sm:px-3">Extended Due Date / Reason</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-light-border/70 dark:divide-dark-border/70">
@@ -920,7 +1049,18 @@ export const TaxMasterPage: React.FC = () => {
                               )}
                             </td>
                             <td className="break-words px-2 py-3 text-light-textSecondary dark:text-dark-textSecondary sm:px-3">
-                              {period.extendedDate ? formatDate(period.extendedDate) : '—'}
+                              {period.extendedDate ? (
+                                <div className="space-y-1">
+                                  <div>{formatDate(period.extendedDate)}</div>
+                                  {period.extensionReason && (
+                                    <div className="text-xs text-light-textMuted dark:text-dark-textMuted">
+                                      {period.extensionReason}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                '—'
+                              )}
                             </td>
                           </tr>
                         );

@@ -94,6 +94,7 @@ const taxMasterFieldsSchema = z.object({
         periodTo: z.string().min(1),
         filingDate: z.string().min(1),
         extendedDate: z.string().optional().nullable(),
+        extensionReason: z.string().trim().optional().nullable(),
         submissionDate: z.string().optional().nullable(),
         reconciliationDate: z.string().optional().nullable(),
       })
@@ -110,6 +111,9 @@ const taxMasterFieldsSchema = z.object({
 });
 
 type TaxMasterScheduleValidationInput = {
+  applicableFinancialYear?: string | null;
+  frequency?: string | null;
+  filingFrequency?: string | null;
   applicableClientTypes?: string[];
   applicableBusinessCategoryOther?: string | null;
   filingSchedule?: {
@@ -117,6 +121,7 @@ type TaxMasterScheduleValidationInput = {
     periodTo: string;
     filingDate: string;
     extendedDate?: string | null;
+    extensionReason?: string | null;
     submissionDate?: string | null;
     reconciliationDate?: string | null;
   }[];
@@ -126,6 +131,65 @@ const isValidCalendarDate = (value: string): boolean => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const date = new Date(`${value}T00:00:00.000Z`);
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const getFinancialYearDateBounds = (financialYear?: string | null) => {
+  if (!financialYear) return undefined;
+  const match = financialYear.match(/(\d{4})\s*-\s*(\d{2}|\d{4})/);
+  const startYear = Number(match?.[1] || financialYear.match(/\d{4}/)?.[0]);
+  if (!startYear) return undefined;
+
+  const endYearToken = match?.[2];
+  let endYear = endYearToken
+    ? Number(endYearToken.length === 2
+        ? `${String(startYear).slice(0, 2)}${endYearToken}`
+        : endYearToken)
+    : startYear + 1;
+  if (endYear <= startYear) endYear += 100;
+
+  return {
+    start: `${startYear}-04-01`,
+    end: `${endYear}-03-31`,
+  };
+};
+
+const getExpectedFinancialYearPeriods = (
+  frequency?: string | null,
+  financialYear?: string | null
+) => {
+  const monthsPerPeriod =
+    frequency === 'Monthly'
+      ? 1
+      : frequency === 'Quarterly'
+        ? 3
+        : frequency === 'Half-Yearly'
+          ? 6
+          : frequency === 'Yearly'
+            ? 12
+            : undefined;
+  const bounds = getFinancialYearDateBounds(financialYear);
+  if (!monthsPerPeriod || !bounds) return undefined;
+
+  const count = 12 / monthsPerPeriod;
+  const startYear = Number(bounds.start.slice(0, 4));
+  return Array.from({ length: count }, (_, index) => {
+    const periodStart = new Date(Date.UTC(startYear, 3 + index * monthsPerPeriod, 1));
+    const periodEnd = new Date(Date.UTC(startYear, 3 + (index + 1) * monthsPerPeriod, 0));
+    return {
+      periodFrom: periodStart.toISOString().slice(0, 10),
+      periodTo: periodEnd.toISOString().slice(0, 10),
+    };
+  });
+};
+
+const getFrequencyPeriodLimit = (frequency?: string | null) => {
+  if (frequency === 'Monthly') return 12;
+  if (frequency === 'Quarterly') return 4;
+  if (frequency === 'Half-Yearly') return 2;
+  if (frequency === 'Yearly') return 1;
+  if (frequency === 'One Time' || frequency === 'One-Time') return 1;
+  if (frequency === 'Custom') return 12;
+  return undefined;
 };
 
 const validateTaxMasterSchedule = (
@@ -146,6 +210,20 @@ const validateTaxMasterSchedule = (
   const schedule = data.filingSchedule;
   if (!schedule) return;
 
+  const financialYearBounds = getFinancialYearDateBounds(data.applicableFinancialYear);
+  const frequency = data.frequency || data.filingFrequency;
+  const periodLimit = getFrequencyPeriodLimit(frequency);
+  const expectedPeriods = getExpectedFinancialYearPeriods(
+    frequency,
+    data.applicableFinancialYear
+  );
+  if (periodLimit && schedule.length > periodLimit) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['filingSchedule'],
+      message: `${frequency} schedules cannot exceed ${periodLimit} periods in a financial year`,
+    });
+  }
   const validRanges: { index: number; from: number; to: number }[] = [];
   schedule.forEach((period, index) => {
     const fromValid = isValidCalendarDate(period.periodFrom);
@@ -184,6 +262,20 @@ const validateTaxMasterSchedule = (
         message: 'Extended Due Date must be a valid calendar date',
       });
     }
+    if (period.extendedDate && !period.extensionReason?.trim()) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'extensionReason'],
+        message: 'A reason is required when an extended due date is set',
+      });
+    }
+    if (!period.extendedDate && period.extensionReason?.trim()) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'extensionReason'],
+        message: 'An extended due date is required when an extension reason is provided',
+      });
+    }
     if (!submissionDateValid) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
@@ -196,6 +288,58 @@ const validateTaxMasterSchedule = (
         code: z.ZodIssueCode.custom,
         path: ['filingSchedule', index, 'reconciliationDate'],
         message: 'Reconciliation Date must be a valid calendar date',
+      });
+    }
+    const expectedPeriod = expectedPeriods?.[index];
+    if (expectedPeriod && period.periodFrom !== expectedPeriod.periodFrom) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'periodFrom'],
+        message: `${data.frequency || data.filingFrequency} period ${index + 1} must start on ${expectedPeriod.periodFrom}`,
+      });
+    }
+    if (expectedPeriod && period.periodTo !== expectedPeriod.periodTo) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'periodTo'],
+        message: `${data.frequency || data.filingFrequency} period ${index + 1} must end on ${expectedPeriod.periodTo}`,
+      });
+    }
+    if (
+      toValid &&
+      financialYearBounds &&
+      (period.periodTo < financialYearBounds.start || period.periodTo > financialYearBounds.end)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'periodTo'],
+        message: 'Period To must be within the selected financial year',
+      });
+    }
+    if (toValid && filingDateValid && period.filingDate <= period.periodTo) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'filingDate'],
+        message: 'Filing Date must be after Period To',
+      });
+    }
+    if (toValid && submissionDateValid && period.submissionDate && period.submissionDate <= period.periodTo) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'submissionDate'],
+        message: 'Submission Date must be after Period To',
+      });
+    }
+    if (
+      toValid &&
+      reconciliationDateValid &&
+      period.reconciliationDate &&
+      period.reconciliationDate <= period.periodTo
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['filingSchedule', index, 'reconciliationDate'],
+        message: 'Reconciliation Date must be after Period To',
       });
     }
     if (

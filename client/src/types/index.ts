@@ -72,6 +72,7 @@ export interface TaxMasterItem {
     periodTo: string;
     filingDate: string;
     extendedDate?: string;
+    extensionReason?: string;
     submissionDate?: string;
     reconciliationDate?: string;
   }[];

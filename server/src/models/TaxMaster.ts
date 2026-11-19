@@ -37,6 +37,7 @@ export interface ITaxMaster extends Document {
     periodTo: Date;
     filingDate: Date;
     extendedDate?: Date;
+    extensionReason?: string;
     submissionDate?: Date;
     reconciliationDate?: Date;
   }[];
@@ -97,6 +98,7 @@ const TaxMasterSchema = new Schema<ITaxMaster>(
         periodTo: { type: Date, required: true },
         filingDate: { type: Date, required: true },
         extendedDate: { type: Date },
+        extensionReason: { type: String, trim: true },
         submissionDate: { type: Date },
         reconciliationDate: { type: Date },
       },

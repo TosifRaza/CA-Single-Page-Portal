@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   Plus,
@@ -14,7 +14,6 @@ import {
   CheckCircle2,
   Tag,
   PlusCircle,
-  Upload,
   FileText,
   AlertCircle,
   Users,
@@ -26,7 +25,6 @@ import { toast } from 'sonner';
 import api from '../../services/api';
 import { WorkMasterItem, TaxMasterItem } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { TaxRuleModal } from '../../components/tax/TaxRuleModal';
 
 export const WorkMasterPage: React.FC = () => {
   const { user } = useAuth();
@@ -47,6 +45,7 @@ export const WorkMasterPage: React.FC = () => {
   const [documentToAdd, setDocumentToAdd] = useState('');
   const [selectedDocumentFile, setSelectedDocumentFile] = useState<File | null>(null);
   const [uploadingRequiredDocument, setUploadingRequiredDocument] = useState(false);
+  const requiredDocumentFileInputRef = useRef<HTMLInputElement>(null);
 
   // Assignments Modal State (View employees assigned to this work)
   const [selectedWorkForAssignments, setSelectedWorkForAssignments] = useState<WorkMasterItem | null>(null);
@@ -175,7 +174,9 @@ export const WorkMasterPage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<WorkMasterItem | null>(null);
-  const [editingTaxRule, setEditingTaxRule] = useState<TaxMasterItem | null>(null);
+  const [isEditingTaxNotes, setIsEditingTaxNotes] = useState(false);
+  const [taxNotesDraft, setTaxNotesDraft] = useState('');
+  const [savingTaxNotes, setSavingTaxNotes] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [newChecklistItem, setNewChecklistItem] = useState('');
 
@@ -285,6 +286,7 @@ export const WorkMasterPage: React.FC = () => {
 
   // When user selects a Tax Name
   const handleTaxSelect = (taxId: string) => {
+    setIsEditingTaxNotes(false);
     const selected = availableTaxes.find((t) => t._id === taxId);
     if (selected) {
       // Automatically map statutory category from taxGroup
@@ -316,6 +318,31 @@ export const WorkMasterPage: React.FC = () => {
     }
   };
 
+  const handleSaveTaxNotes = async () => {
+    if (!selectedTax) return;
+
+    try {
+      setSavingTaxNotes(true);
+      const response = await api.put(`/taxes/${selectedTax._id}`, {
+        description: taxNotesDraft,
+      });
+      const savedTax = response.data?.data;
+      const description = savedTax?.description ?? taxNotesDraft;
+      setAvailableTaxes((taxes) =>
+        taxes.map((tax) =>
+          tax._id === selectedTax._id ? { ...tax, ...savedTax, description } : tax
+        )
+      );
+      setTaxNotesDraft(description);
+      setIsEditingTaxNotes(false);
+      toast.success('Regulatory notes updated.');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || error.message || 'Could not update regulatory notes.');
+    } finally {
+      setSavingTaxNotes(false);
+    }
+  };
+
   const handleAddChecklist = () => {
     if (!newChecklistItem.trim()) return;
     setFormData((prev) => ({
@@ -342,15 +369,16 @@ export const WorkMasterPage: React.FC = () => {
     }));
   };
 
-  const handleUploadRequiredDocument = async () => {
+  const handleUploadRequiredDocument = async (selectedFile?: File) => {
     const selectedDocument = availableDocuments.find((document) => document.name === documentToAdd);
-    if (!selectedDocument || !selectedDocumentFile) {
+    const fileToUpload = selectedFile || selectedDocumentFile;
+    if (!selectedDocument || !fileToUpload) {
       toast.error('Select a document name and choose a file to upload.');
       return;
     }
 
     const uploadPayload = new FormData();
-    uploadPayload.append('file', selectedDocumentFile);
+    uploadPayload.append('file', fileToUpload);
     uploadPayload.append('categoryId', selectedDocument._id);
     uploadPayload.append('description', `Work Master required document: ${selectedDocument.name}`);
 
@@ -376,7 +404,7 @@ export const WorkMasterPage: React.FC = () => {
           {
             documentName: selectedDocument.name,
             documentId: uploadedFile._id,
-            fileName: uploadedFile.originalName || selectedDocumentFile.name,
+            fileName: uploadedFile.originalName || fileToUpload.name,
           },
         ],
       }));
@@ -384,6 +412,10 @@ export const WorkMasterPage: React.FC = () => {
       setSelectedDocumentFile(null);
       toast.success(`${selectedDocument.name} uploaded and added to this work.`);
     } catch (error: any) {
+      setSelectedDocumentFile(null);
+      if (requiredDocumentFileInputRef.current) {
+        requiredDocumentFileInputRef.current.value = '';
+      }
       toast.error(error.response?.data?.message || error.message || 'Document upload failed');
     } finally {
       setUploadingRequiredDocument(false);
@@ -418,6 +450,7 @@ export const WorkMasterPage: React.FC = () => {
 
   const openCreateModal = () => {
     setEditingWork(null);
+    setIsEditingTaxNotes(false);
     setNewChecklistItem('');
     setDocumentToAdd('');
     setSelectedDocumentFile(null);
@@ -446,6 +479,7 @@ export const WorkMasterPage: React.FC = () => {
 
   const openEditModal = (work: WorkMasterItem) => {
     setEditingWork(work);
+    setIsEditingTaxNotes(false);
     setNewChecklistItem('');
     setDocumentToAdd('');
     setSelectedDocumentFile(null);
@@ -997,7 +1031,7 @@ export const WorkMasterPage: React.FC = () => {
                                   <th className="px-2 py-1.5 font-semibold">Filing Date</th>
                                   <th className="px-2 py-1.5 font-semibold">Submission Date</th>
                                   <th className="px-2 py-1.5 font-semibold">Reconciliation Date</th>
-                                  <th className="px-2 py-1.5 font-semibold">Extended Due Date</th>
+                                  <th className="px-2 py-1.5 font-semibold">Extended Due Date / Reason</th>
                                 </tr>
                               </thead>
                               <tbody className="divide-y divide-blue-100/80 dark:divide-blue-500/15">
@@ -1022,7 +1056,20 @@ export const WorkMasterPage: React.FC = () => {
                                       <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.filingDate)}</td>
                                       <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.submissionDate)}</td>
                                       <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.reconciliationDate)}</td>
-                                      <td className="whitespace-nowrap px-2 py-1.5">{formatDate(period.extendedDate)}</td>
+                                      <td className="max-w-[200px] px-2 py-1.5">
+                                        {period.extendedDate ? (
+                                          <div className="space-y-0.5">
+                                            <div className="whitespace-nowrap">{formatDate(period.extendedDate)}</div>
+                                            {period.extensionReason && (
+                                              <div className="whitespace-normal text-[10px] text-light-textMuted dark:text-dark-textMuted">
+                                                {period.extensionReason}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          '—'
+                                        )}
+                                      </td>
                                     </tr>
                                   );
                                 })}
@@ -1037,21 +1084,59 @@ export const WorkMasterPage: React.FC = () => {
                       </div>
 
                       {/* Description / Instructions */}
-                      <div className="flex items-start justify-between gap-3 text-[13px] text-light-textSecondary dark:text-dark-textSecondary bg-white/60 dark:bg-dark-bg/40 p-2.5 rounded-lg border border-blue-100/80 dark:border-blue-500/10">
-                        <div className="min-w-0 flex-1">
-                          <span className="font-semibold text-blue-900 dark:text-blue-300">Regulatory Notes: </span>
-                          <span>{selectedTax.description || 'No regulatory notes added.'}</span>
+                      {isEditingTaxNotes ? (
+                        <div className="space-y-2 rounded-lg border border-blue-100/80 bg-white/60 p-3 dark:border-blue-500/10 dark:bg-dark-bg/40">
+                          <label className="block text-[13px] font-semibold text-blue-900 dark:text-blue-300">
+                            Regulatory Notes
+                          </label>
+                          <textarea
+                            rows={3}
+                            autoFocus
+                            value={taxNotesDraft}
+                            onChange={(event) => setTaxNotesDraft(event.target.value)}
+                            disabled={savingTaxNotes}
+                            placeholder="Add regulatory notes..."
+                            className="w-full resize-y rounded-lg border border-light-border bg-white px-3 py-2 text-[13px] text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-dark-border dark:bg-dark-card dark:text-dark-textPrimary"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setIsEditingTaxNotes(false)}
+                              disabled={savingTaxNotes}
+                              className="rounded-md border border-light-border px-3 py-1.5 text-xs text-light-textSecondary hover:bg-light-bg disabled:opacity-50 dark:border-dark-border dark:text-dark-textSecondary dark:hover:bg-dark-cardSecondary"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleSaveTaxNotes}
+                              disabled={savingTaxNotes}
+                              className="rounded-md bg-brand-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-brand-700 disabled:opacity-50"
+                            >
+                              {savingTaxNotes ? 'Saving...' : 'Save Notes'}
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => setEditingTaxRule(selectedTax)}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-normal text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
-                          title="Edit this tax rule"
-                        >
-                          <Edit2 className="h-3.5 w-3.5" />
-                          Edit
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="flex items-start justify-between gap-3 rounded-lg border border-blue-100/80 bg-white/60 p-2.5 text-[13px] text-light-textSecondary dark:border-blue-500/10 dark:bg-dark-bg/40 dark:text-dark-textSecondary">
+                          <div className="min-w-0 flex-1">
+                            <span className="font-semibold text-blue-900 dark:text-blue-300">Regulatory Notes: </span>
+                            <span>{selectedTax.description || 'No regulatory notes added.'}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTaxNotesDraft(selectedTax.description || '');
+                              setIsEditingTaxNotes(true);
+                            }}
+                            className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-xs font-normal text-brand-600 transition-colors hover:bg-brand-50 dark:text-brand-300 dark:hover:bg-brand-500/10"
+                            title="Edit regulatory notes here"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                            Edit
+                          </button>
+                        </div>
+                      )}
                     </div>
                   ) : editingWork ? (
                     <div className="p-3 rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/50 dark:bg-amber-500/10 flex items-center gap-2.5 text-xs text-amber-800 dark:text-amber-300">
@@ -1076,6 +1161,9 @@ export const WorkMasterPage: React.FC = () => {
                         onChange={(event) => {
                           setDocumentToAdd(event.target.value);
                           setSelectedDocumentFile(null);
+                          if (requiredDocumentFileInputRef.current) {
+                            requiredDocumentFileInputRef.current.value = '';
+                          }
                         }}
                         disabled={availableDocuments.length === 0}
                         className="min-w-0 flex-1 rounded-xl border border-light-border bg-light-bg px-3 py-2 text-xs !font-normal text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 disabled:opacity-60 dark:border-dark-border dark:bg-dark-bg dark:text-dark-textPrimary"
@@ -1107,24 +1195,21 @@ export const WorkMasterPage: React.FC = () => {
                         </label>
                         <div className="flex flex-col gap-2 sm:flex-row">
                           <input
+                            ref={requiredDocumentFileInputRef}
                             type="file"
-                            onChange={(event) =>
-                              setSelectedDocumentFile(event.target.files?.[0] || null)
-                            }
+                            disabled={uploadingRequiredDocument}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0] || null;
+                              setSelectedDocumentFile(file);
+                              if (file) void handleUploadRequiredDocument(file);
+                            }}
                             className="min-w-0 flex-1 rounded-lg border border-light-border bg-white px-2 py-1.5 text-xs text-light-textSecondary dark:border-dark-border dark:bg-dark-bg dark:text-dark-textSecondary"
                           />
-                          <button
-                            type="button"
-                            onClick={handleUploadRequiredDocument}
-                            disabled={!selectedDocumentFile || uploadingRequiredDocument}
-                            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-brand-500 px-3 py-2 text-xs font-normal text-white transition-colors hover:bg-brand-600 disabled:cursor-not-allowed disabled:opacity-50"
-                          >
-                            <Upload className="h-3.5 w-3.5" />
-                            {uploadingRequiredDocument ? 'Uploading...' : 'Upload & Add'}
-                          </button>
                         </div>
                         <p className="mt-1.5 text-[11px] text-light-textMuted dark:text-dark-textMuted">
-                          The uploaded file will be attached to this required document in the work template.
+                          {uploadingRequiredDocument
+                            ? 'Uploading and attaching file...'
+                            : 'The file uploads and attaches as soon as you select it.'}
                         </p>
                       </div>
                     )}
@@ -1691,17 +1776,6 @@ export const WorkMasterPage: React.FC = () => {
         </div>
       )}
 
-      {editingTaxRule && (
-        <TaxRuleModal
-          isOpen={Boolean(editingTaxRule)}
-          onClose={() => setEditingTaxRule(null)}
-          onSuccess={() => {
-            fetchAvailableTaxes();
-            fetchWorks();
-          }}
-          editingTax={editingTaxRule}
-        />
-      )}
     </div>
   );
 };

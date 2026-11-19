@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { TaxMasterItem, EmployeeItem, TaxGroupItem } from '../../types';
+import { PeriodDueDatePicker } from './PeriodDueDatePicker';
 
 interface TaxRuleModalProps {
   isOpen: boolean;
@@ -36,6 +37,7 @@ interface FilingPeriodScheduleItem {
   periodTo: string;
   filingDate: string;
   extendedDate: string;
+  extensionReason: string;
   submissionDate: string;
   reconciliationDate: string;
 }
@@ -125,6 +127,9 @@ const getFilingPeriodLimit = (frequency: string): number => {
   return 1;
 };
 
+const hasFixedFinancialYearPeriods = (frequency: string): boolean =>
+  ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'].includes(frequency);
+
 const formatScheduleDate = (value: string): string => {
   if (!value) return '—';
   const date = new Date(`${value}T00:00:00`);
@@ -133,12 +138,54 @@ const formatScheduleDate = (value: string): string => {
     : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 };
 
+const getFilingPeriodTitle = (
+  frequency: string,
+  index: number,
+  period: Pick<FilingPeriodScheduleItem, 'periodFrom' | 'periodTo'>,
+  financialYear: string
+): string => {
+  if (!period.periodFrom || !period.periodTo) return `Period ${index + 1}`;
+  if (frequency === 'Monthly') {
+    return new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
+      month: 'long',
+      year: 'numeric',
+    });
+  }
+  if (frequency === 'Quarterly' || frequency === 'Half-Yearly') {
+    const fromMonth = new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', { month: 'short' });
+    const toMonth = new Date(`${period.periodTo}T00:00:00`).toLocaleDateString('en-IN', { month: 'short' });
+    const prefix = frequency === 'Quarterly' ? 'Q' : 'H';
+    return `${prefix}${index + 1} (${fromMonth}–${toMonth})`;
+  }
+  if (frequency === 'Yearly') return `FY ${financialYear}`;
+  return `Period ${index + 1}`;
+};
+
 const shiftScheduleDate = (value: string | undefined, days: number): string | undefined => {
   if (!value) return undefined;
   const date = new Date(`${value}T00:00:00Z`);
   if (Number.isNaN(date.getTime())) return undefined;
   date.setUTCDate(date.getUTCDate() + days);
   return date.toISOString().slice(0, 10);
+};
+
+const getFinancialYearDateBounds = (financialYear: string) => {
+  const match = financialYear.match(/(\d{4})\s*-\s*(\d{2}|\d{4})/);
+  const startYear = Number(match?.[1] || financialYear.match(/\d{4}/)?.[0]);
+  if (!startYear) return undefined;
+
+  const endYearToken = match?.[2];
+  let endYear = endYearToken
+    ? Number(endYearToken.length === 2
+        ? `${String(startYear).slice(0, 2)}${endYearToken}`
+        : endYearToken)
+    : startYear + 1;
+  if (endYear <= startYear) endYear += 100;
+
+  return {
+    start: `${startYear}-04-01`,
+    end: `${endYear}-03-31`,
+  };
 };
 
 const previousScheduleDate = (values: Array<string | undefined>): string | undefined => {
@@ -161,6 +208,7 @@ const buildFilingPeriodSchedule = (
       periodTo: '',
       filingDate: '',
       extendedDate: '',
+      extensionReason: '',
       submissionDate: '',
       reconciliationDate: '',
     }];
@@ -182,6 +230,7 @@ const buildFilingPeriodSchedule = (
       periodTo: `${endDateYear}-${toMonth}-${String(lastDay).padStart(2, '0')}`,
       filingDate: '',
       extendedDate: '',
+      extensionReason: '',
       submissionDate: '',
       reconciliationDate: '',
     };
@@ -202,6 +251,7 @@ const savedScheduleHasChanges = (
       period.periodTo !== generatedPeriod.periodTo ||
       Boolean(period.filingDate) ||
       Boolean(period.extendedDate) ||
+      Boolean(period.extensionReason) ||
       Boolean(period.submissionDate) ||
       Boolean(period.reconciliationDate)
     );
@@ -434,6 +484,9 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [availableTaxGroups, setAvailableTaxGroups] = useState<TaxGroupItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [showDiscardConfirmation, setShowDiscardConfirmation] = useState(false);
+  const [scrollToScheduleIndex, setScrollToScheduleIndex] = useState<number | null>(null);
+  const scheduleCardRefs = useRef<Record<number, HTMLDivElement | null>>({});
 
   // Section A: Basic Tax Information
   const [taxGroup, setTaxGroup] = useState<string>('');
@@ -449,6 +502,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [isBusinessCategoryOpen, setIsBusinessCategoryOpen] = useState(false);
   const businessCategoryPickerRef = useRef<HTMLDivElement>(null);
   const [status, setStatus] = useState<string>('Active');
+  const financialYearDateBounds = getFinancialYearDateBounds(financialYear);
+
+  useEffect(() => {
+    if (scrollToScheduleIndex === null) return;
+    const scheduleCard = scheduleCardRefs.current[scrollToScheduleIndex];
+    scheduleCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    setScrollToScheduleIndex(null);
+  }, [scrollToScheduleIndex, filingPeriodSchedule.length]);
 
   // Section B: Timeline & Due Date
   const [periodFrom, setPeriodFrom] = useState<string>('');
@@ -628,22 +689,29 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         periodTo: period.periodTo?.slice(0, 10) || '',
         filingDate: period.filingDate?.slice(0, 10) || '',
         extendedDate: period.extendedDate?.slice(0, 10) || '',
+        extensionReason: period.extensionReason || '',
         submissionDate: period.submissionDate?.slice(0, 10) || '',
         reconciliationDate: period.reconciliationDate?.slice(0, 10) || '',
       }));
       const generatedSchedule = buildFilingPeriodSchedule(editingFrequency, editingFinancialYear);
       const mergedSchedule = savedSchedule?.length
-        ? savedSchedule.map((period, index) => ({
-            ...(generatedSchedule[index] || {
-              periodFrom: '',
-              periodTo: '',
-              filingDate: '',
-              extendedDate: '',
-              submissionDate: '',
-              reconciliationDate: '',
-            }),
-            ...period,
-          }))
+        ? savedSchedule
+            .slice(0, getFilingPeriodLimit(editingFrequency))
+            .map((period, index) => {
+              const generatedPeriod = generatedSchedule[index];
+              return {
+                ...(generatedPeriod || {
+                  periodFrom: '',
+                  periodTo: '',
+                  filingDate: '',
+                  extendedDate: '',
+                  extensionReason: '',
+                  submissionDate: '',
+                  reconciliationDate: '',
+                }),
+                ...period,
+              };
+            })
         : generatedSchedule.slice(0, 1);
       setFilingPeriodSchedule(mergedSchedule);
       setSavedFilingPeriodFlags(
@@ -738,6 +806,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       setAmountAsPerBooks(0);
       setAmountAsPerStatement(0);
       setIsDirty(false);
+      setShowDiscardConfirmation(false);
     }
   }, [editingTax, defaultTaxGroup, isOpen]);
 
@@ -792,14 +861,59 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   ) => {
     const period = filingPeriodSchedule[index];
     if (!period) return;
+    const fixedPeriods = hasFixedFinancialYearPeriods(frequency);
+    const expectedPeriods = fixedPeriods
+      ? buildFilingPeriodSchedule(frequency, financialYear)
+      : [];
 
-    if (field === 'periodFrom' && value && period.periodTo && value >= period.periodTo) {
-      toast.error('Period From must be earlier than Period To.');
-      return;
+    if (field === 'periodFrom' && value) {
+      if (period.periodTo && value >= period.periodTo) {
+        toast.error('Period From must be earlier than Period To.');
+        return;
+      }
+      if (
+        fixedPeriods &&
+        financialYearDateBounds &&
+        (value < financialYearDateBounds.start || value > financialYearDateBounds.end)
+      ) {
+        toast.error('Period From must be within the selected Financial Year.');
+        return;
+      }
+      if (fixedPeriods && index > 0) {
+        const previousPeriod = filingPeriodSchedule[index - 1];
+        const previousPeriodTo = shiftScheduleDate(value, -1);
+        const previousExpected = expectedPeriods[index - 1];
+        const previousDueDates = [
+          previousPeriod.filingDate,
+          previousPeriod.submissionDate,
+          previousPeriod.reconciliationDate,
+        ].filter(Boolean);
+        if (
+          !previousPeriodTo ||
+          previousPeriodTo <= previousPeriod.periodFrom ||
+          (previousExpected && previousPeriodTo > previousExpected.periodTo) ||
+          previousDueDates.some((date) => previousPeriodTo >= date)
+        ) {
+          toast.error('This period must start after the previous period and its due dates.');
+          return;
+        }
+      }
     }
     if (field === 'periodTo' && value) {
       if (period.periodFrom && value <= period.periodFrom) {
         toast.error('Period To must be later than Period From.');
+        return;
+      }
+      if (
+        financialYearDateBounds &&
+        (value < financialYearDateBounds.start || value > financialYearDateBounds.end)
+      ) {
+        toast.error('Period To must be within the selected Financial Year.');
+        return;
+      }
+      const expectedPeriod = expectedPeriods[index];
+      if (fixedPeriods && expectedPeriod && value > expectedPeriod.periodTo) {
+        toast.error(`This period cannot end after ${formatScheduleDate(expectedPeriod.periodTo)}.`);
         return;
       }
       const laterDates = [period.filingDate, period.submissionDate, period.reconciliationDate]
@@ -808,14 +922,22 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         toast.error('Period To must be earlier than the filing, submission, and reconciliation dates.');
         return;
       }
+      const nextPeriod = filingPeriodSchedule[index + 1];
+      if (fixedPeriods && nextPeriod) {
+        const nextPeriodFrom = shiftScheduleDate(value, 1);
+        if (!nextPeriodFrom || nextPeriodFrom >= nextPeriod.periodTo) {
+          toast.error('Leave at least one valid day for the next period.');
+          return;
+        }
+      }
     }
     if (field === 'filingDate' && value) {
       if (period.periodTo && value <= period.periodTo) {
         toast.error('Filing Date must be after Period To.');
         return;
       }
-      if (period.extendedDate && value >= period.extendedDate) {
-        toast.error('Filing Date must be earlier than Extended Due Date.');
+      if (period.extendedDate && value > period.extendedDate) {
+        toast.error('Filing Date must be on or before Extended Due Date.');
         return;
       }
     }
@@ -823,18 +945,47 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       toast.error(`${field === 'submissionDate' ? 'Submission' : 'Reconciliation'} Date must be after Period To.`);
       return;
     }
-    if (field === 'extendedDate' && value && period.filingDate && value <= period.filingDate) {
-      toast.error('Extended Due Date must be later than Filing Date.');
+    if (field === 'extendedDate' && value && period.filingDate && value < period.filingDate) {
+      toast.error('Extended Due Date must be on or after Filing Date.');
       return;
     }
 
-    setFilingPeriodSchedule((periods) =>
-      periods.map((period, periodIndex) =>
-        periodIndex === index ? { ...period, [field]: value } : period
-      )
-    );
+    const changedIndexes = new Set([index]);
+    if (fixedPeriods && field === 'periodFrom' && index > 0) {
+      changedIndexes.add(index - 1);
+    }
+    if (fixedPeriods && field === 'periodTo' && index + 1 < filingPeriodSchedule.length) {
+      changedIndexes.add(index + 1);
+    }
+    setFilingPeriodSchedule((periods) => {
+      const nextPeriods = [...periods];
+      if (fixedPeriods && field === 'periodFrom' && index > 0) {
+        const previousPeriodTo = shiftScheduleDate(value, -1);
+        if (previousPeriodTo) {
+          nextPeriods[index - 1] = {
+            ...nextPeriods[index - 1],
+            periodTo: previousPeriodTo,
+          };
+        }
+      }
+      nextPeriods[index] = {
+        ...nextPeriods[index],
+        [field]: value,
+        ...(field === 'extendedDate' && !value ? { extensionReason: '' } : {}),
+      };
+      if (fixedPeriods && field === 'periodTo' && nextPeriods[index + 1]) {
+        const nextPeriodFrom = shiftScheduleDate(value, 1);
+        if (nextPeriodFrom) {
+          nextPeriods[index + 1] = {
+            ...nextPeriods[index + 1],
+            periodFrom: nextPeriodFrom,
+          };
+        }
+      }
+      return nextPeriods;
+    });
     setSavedFilingPeriodFlags((flags) =>
-      flags.map((isSaved, periodIndex) => (periodIndex === index ? false : isSaved))
+      flags.map((isSaved, periodIndex) => (changedIndexes.has(periodIndex) ? false : isSaved))
     );
     setHasEditedFilingSchedule(true);
     setIsDirty(true);
@@ -844,6 +995,21 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
     const period = filingPeriodSchedule[index];
     if (!period?.periodFrom || !period.periodTo || !period.filingDate) {
       toast.error('Enter Period From, Period To, and Filing Date before saving this period.');
+      return;
+    }
+    if (hasFixedFinancialYearPeriods(frequency)) {
+      const expectedPeriod = buildFilingPeriodSchedule(frequency, financialYear)[index];
+      if (
+        !expectedPeriod ||
+        period.periodFrom !== expectedPeriod.periodFrom ||
+        period.periodTo !== expectedPeriod.periodTo
+      ) {
+        toast.error('This period must match the selected frequency and Financial Year.');
+        return;
+      }
+    }
+    if (period.extendedDate && !period.extensionReason.trim()) {
+      toast.error('Enter a reason for the extended due date.');
       return;
     }
 
@@ -864,6 +1030,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       toast.error('Period From must be earlier than Period To.');
       return;
     }
+    if (
+      financialYearDateBounds &&
+      (period.periodTo < financialYearDateBounds.start || period.periodTo > financialYearDateBounds.end)
+    ) {
+      toast.error('Period To must be within the selected Financial Year.');
+      return;
+    }
     if (Number.isNaN(filingDate.getTime())) {
       toast.error('Enter a valid Filing Date.');
       return;
@@ -880,8 +1053,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       toast.error('Reconciliation Date must be after Period To.');
       return;
     }
-    if (extendedDate && (Number.isNaN(extendedDate.getTime()) || extendedDate <= filingDate)) {
-      toast.error('Extended Due Date must be later than the Filing Date.');
+    if (extendedDate && (Number.isNaN(extendedDate.getTime()) || extendedDate < filingDate)) {
+      toast.error('Extended Due Date must be on or after the Filing Date.');
       return;
     }
 
@@ -906,12 +1079,16 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   const handleCancel = () => {
     if (isDirty) {
-      if (window.confirm('Discard unsaved changes in this tax configuration?')) {
-        onClose();
-      }
+      setShowDiscardConfirmation(true);
     } else {
       onClose();
     }
+  };
+
+  const handleDiscardChanges = () => {
+    setShowDiscardConfirmation(false);
+    setIsDirty(false);
+    onClose();
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -957,9 +1134,15 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         Number.isNaN(fromDate.getTime()) ||
         Number.isNaN(toDate.getTime()) ||
         fromDate >= toDate ||
+        Boolean(
+          financialYearDateBounds &&
+          (period.periodTo < financialYearDateBounds.start ||
+            period.periodTo > financialYearDateBounds.end)
+        ) ||
         !filingDate ||
         Number.isNaN(filingDate.getTime()) ||
         filingDate <= toDate ||
+        (period.extendedDate && !period.extensionReason.trim()) ||
         (submissionDate &&
           (Number.isNaN(submissionDate.getTime()) || submissionDate <= toDate)) ||
         (reconciliationDate &&
@@ -967,13 +1150,31 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         (extendedDate &&
           (Number.isNaN(extendedDate.getTime()) ||
             !filingDate ||
-            extendedDate <= filingDate))
+            extendedDate < filingDate))
       );
     });
     if (filingPeriodSchedule.length === 0 || invalidPeriod) {
       toast.error(
-        'Each period needs valid dates: From before To, filing/submission/reconciliation after To, and any Extended Due Date after Filing Date.'
+        'Each period needs valid dates: Period From before Period To, Period To within the Financial Year, filing/submission/reconciliation after Period To, and any Extended Due Date on or after Filing Date.'
       );
+      return;
+    }
+    if (filingPeriodSchedule.length > getFilingPeriodLimit(frequency)) {
+      toast.error(`A ${frequency} schedule cannot have more than ${getFilingPeriodLimit(frequency)} periods.`);
+      return;
+    }
+    if (
+      hasFixedFinancialYearPeriods(frequency) &&
+      filingPeriodSchedule.some((period, index) => {
+        const expectedPeriod = buildFilingPeriodSchedule(frequency, financialYear)[index];
+        return (
+          !expectedPeriod ||
+          period.periodFrom !== expectedPeriod.periodFrom ||
+          period.periodTo !== expectedPeriod.periodTo
+        );
+      })
+    ) {
+      toast.error('Reporting periods are fixed to the selected frequency and Financial Year.');
       return;
     }
 
@@ -1013,12 +1214,18 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         periodTo: lastFilingPeriod?.periodTo || undefined,
         filingPeriod: `${frequency} Schedule`,
         originalDueDate: firstFilingPeriod?.filingDate || undefined,
-        extendedDueDate: firstFilingPeriod?.extendedDate || null,
+        extendedDueDate:
+          firstFilingPeriod?.extendedDate
+            ? firstFilingPeriod.extendedDate
+            : null,
         effectiveDueDate:
-          firstFilingPeriod?.extendedDate || firstFilingPeriod?.filingDate || undefined,
+          firstFilingPeriod?.extendedDate ||
+          firstFilingPeriod?.filingDate ||
+          undefined,
         filingSchedule: completeFilingSchedule.map((period) => ({
           ...period,
           extendedDate: period.extendedDate || undefined,
+          extensionReason: period.extendedDate ? period.extensionReason.trim() || undefined : undefined,
           submissionDate: period.submissionDate || undefined,
           reconciliationDate: period.reconciliationDate || undefined,
         })),
@@ -1105,8 +1312,9 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   };
 
   return (
+    <>
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl max-w-7xl w-full flex flex-col max-h-[92vh] overflow-hidden">
+      <div className="bg-white dark:bg-dark-card border border-light-border dark:border-dark-border rounded-2xl shadow-2xl w-[calc(100vw-24px)] max-w-[1800px] flex flex-col max-h-[94vh] overflow-hidden">
         {/* Sticky Header */}
         <div className="sticky top-0 bg-white dark:bg-dark-card px-6 py-4 border-b border-light-border dark:border-dark-border flex items-center justify-between z-10">
           <div>
@@ -1458,20 +1666,19 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           <th className="px-3 py-2.5 font-bold">Filing Date</th>
                           <th className="px-3 py-2.5 font-bold">Submission Date</th>
                           <th className="px-3 py-2.5 font-bold">Reconciliation Date</th>
-                          <th className="px-3 py-2.5 font-bold">Extended Due Date</th>
+                          <th className="px-3 py-2.5 font-bold">Extended Due Date / Reason</th>
                           <th className="px-3 py-2.5 text-right font-bold">Action</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-light-border dark:divide-dark-border">
                         {filingPeriodSchedule.map((period, index) => {
                           if (!savedFilingPeriodFlags[index]) return null;
-                          const periodTitle =
-                            frequency === 'Monthly' && period.periodFrom
-                              ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
-                                  month: 'long',
-                                  year: 'numeric',
-                                })
-                              : `Period ${index + 1}`;
+                          const periodTitle = getFilingPeriodTitle(
+                            frequency,
+                            index,
+                            period,
+                            financialYear
+                          );
 
                           return (
                             <tr key={index} className="bg-white dark:bg-dark-card">
@@ -1493,8 +1700,19 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                               <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
                                 {formatScheduleDate(period.reconciliationDate)}
                               </td>
-                              <td className="whitespace-nowrap px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
-                                {formatScheduleDate(period.extendedDate)}
+                              <td className="max-w-[240px] px-3 py-2.5 text-light-textSecondary dark:text-dark-textSecondary">
+                                {period.extendedDate ? (
+                                  <div className="space-y-0.5">
+                                    <div className="whitespace-nowrap">{formatScheduleDate(period.extendedDate)}</div>
+                                    {period.extensionReason && (
+                                      <div className="whitespace-normal text-[11px] text-light-textMuted dark:text-dark-textMuted">
+                                        Reason: {period.extensionReason}
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  '—'
+                                )}
                               </td>
                               <td className="whitespace-nowrap px-3 py-2 text-right">
                                 <div className="inline-flex items-center gap-2">
@@ -1520,6 +1738,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                                           periods.filter((_, periodIndex) => periodIndex !== index)
                                         );
                                         setSavedFilingPeriodFlags((flags) => flags.slice(0, -1));
+                                        setScrollToScheduleIndex(null);
                                         setHasEditedFilingSchedule(true);
                                         setIsDirty(true);
                                       }}
@@ -1543,18 +1762,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     savedFilingPeriodFlags[index] ? null : (
                     <div
                       key={index}
+                      ref={(element) => {
+                        scheduleCardRefs.current[index] = element;
+                      }}
                       className="p-2.5 rounded-xl bg-light-bg/50 dark:bg-dark-bg/50 border border-light-border dark:border-dark-border"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <h5 className="text-xs font-bold text-light-textPrimary dark:text-dark-textPrimary">
-                          {period.periodFrom && period.periodTo
-                            ? frequency === 'Monthly'
-                              ? new Date(`${period.periodFrom}T00:00:00`).toLocaleDateString('en-IN', {
-                                  month: 'long',
-                                  year: 'numeric',
-                                })
-                              : `Period ${index + 1} (${period.periodFrom} to ${period.periodTo})`
-                          : `Period ${index + 1}`}
+                          {getFilingPeriodTitle(frequency, index, period, financialYear)}
                         </h5>
                         {index > 0 && index === filingPeriodSchedule.length - 1 && (
                           <button
@@ -1564,6 +1779,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                                 periods.filter((_, periodIndex) => periodIndex !== index)
                               );
                               setSavedFilingPeriodFlags((flags) => flags.slice(0, -1));
+                              setScrollToScheduleIndex(null);
                               setHasEditedFilingSchedule(true);
                               setIsDirty(true);
                             }}
@@ -1575,7 +1791,7 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           </button>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-2">
+                      <div className={`grid grid-cols-1 sm:grid-cols-2 ${period.extendedDate ? 'xl:grid-cols-8' : 'xl:grid-cols-6'} gap-2`}>
                         <div>
                           <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Period From *
@@ -1584,7 +1800,12 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             type="date"
                             required
                             value={period.periodFrom}
-                            max={shiftScheduleDate(period.periodTo, -1)}
+                            min={hasFixedFinancialYearPeriods(frequency)
+                              ? buildFilingPeriodSchedule(frequency, financialYear)[index]?.periodFrom
+                              : undefined}
+                            max={hasFixedFinancialYearPeriods(frequency)
+                              ? buildFilingPeriodSchedule(frequency, financialYear)[index]?.periodFrom
+                              : shiftScheduleDate(period.periodTo, -1)}
                             onChange={(e) => updateFilingPeriod(index, 'periodFrom', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1597,12 +1818,28 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             type="date"
                             required
                             value={period.periodTo}
-                            min={shiftScheduleDate(period.periodFrom, 1)}
-                            max={previousScheduleDate([
-                              period.filingDate,
-                              period.submissionDate,
-                              period.reconciliationDate,
-                            ])}
+                            min={hasFixedFinancialYearPeriods(frequency)
+                              ? buildFilingPeriodSchedule(frequency, financialYear)[index]?.periodTo
+                              : (() => {
+                                  const afterFrom = shiftScheduleDate(period.periodFrom, 1);
+                                  const financialYearStart = financialYearDateBounds?.start;
+                                  if (!afterFrom) return financialYearStart;
+                                  if (!financialYearStart || afterFrom > financialYearStart) return afterFrom;
+                                  return financialYearStart;
+                                })()}
+                            max={hasFixedFinancialYearPeriods(frequency)
+                              ? buildFilingPeriodSchedule(frequency, financialYear)[index]?.periodTo
+                              : (() => {
+                                  const beforeDueDates = previousScheduleDate([
+                                    period.filingDate,
+                                    period.submissionDate,
+                                    period.reconciliationDate,
+                                  ]);
+                                  const financialYearEnd = financialYearDateBounds?.end;
+                                  if (!beforeDueDates) return financialYearEnd;
+                                  if (!financialYearEnd || beforeDueDates < financialYearEnd) return beforeDueDates;
+                                  return financialYearEnd;
+                                })()}
                             onChange={(e) => updateFilingPeriod(index, 'periodTo', e.target.value)}
                             className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
                           />
@@ -1611,52 +1848,63 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                           <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Filing Date *
                           </label>
-                          <input
-                            type="date"
-                            required
+                          <PeriodDueDatePicker
                             value={period.filingDate}
-                            min={shiftScheduleDate(period.periodTo, 1)}
-                            max={shiftScheduleDate(period.extendedDate, -1)}
-                            onChange={(e) => updateFilingPeriod(index, 'filingDate', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            periodTo={period.periodTo}
+                            max={period.extendedDate || undefined}
+                            onChange={(value) => updateFilingPeriod(index, 'filingDate', value)}
+                            ariaLabel="Filing Date"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Submission Date
                           </label>
-                          <input
-                            type="date"
+                          <PeriodDueDatePicker
                             value={period.submissionDate}
-                            min={shiftScheduleDate(period.periodTo, 1)}
-                            onChange={(e) => updateFilingPeriod(index, 'submissionDate', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            periodTo={period.periodTo}
+                            onChange={(value) => updateFilingPeriod(index, 'submissionDate', value)}
+                            ariaLabel="Submission Date"
                           />
                         </div>
                         <div>
                           <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
                             Reconciliation Date
                           </label>
-                          <input
-                            type="date"
+                          <PeriodDueDatePicker
                             value={period.reconciliationDate}
-                            min={shiftScheduleDate(period.periodTo, 1)}
-                            onChange={(e) => updateFilingPeriod(index, 'reconciliationDate', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            periodTo={period.periodTo}
+                            onChange={(value) => updateFilingPeriod(index, 'reconciliationDate', value)}
+                            ariaLabel="Reconciliation Date"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-normal mb-1 text-light-textPrimary dark:text-dark-textPrimary">
+                          <label className="mb-1 block text-xs text-light-textPrimary dark:text-dark-textPrimary">
                             Extended Due Date
                           </label>
                           <input
                             type="date"
                             value={period.extendedDate}
-                            min={shiftScheduleDate(period.filingDate, 1)}
+                            min={period.filingDate || undefined}
                             onChange={(e) => updateFilingPeriod(index, 'extendedDate', e.target.value)}
-                            className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-dark-card border border-light-border dark:border-dark-border text-xs text-light-textPrimary dark:text-dark-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                            className="w-full rounded-lg border border-light-border bg-white px-2 py-1.5 text-xs text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-card dark:text-dark-textPrimary"
                           />
                         </div>
+                        {period.extendedDate && (
+                          <div className="xl:col-span-2">
+                            <label className="mb-1 block text-xs text-light-textPrimary dark:text-dark-textPrimary">
+                              Reason for Extension *
+                            </label>
+                            <textarea
+                              required
+                              rows={2}
+                              value={period.extensionReason}
+                              onChange={(e) => updateFilingPeriod(index, 'extensionReason', e.target.value)}
+                              placeholder="Explain why the filing deadline was extended..."
+                              className="w-full resize-y rounded-lg border border-light-border bg-white px-2.5 py-2 text-xs text-light-textPrimary focus:outline-none focus:ring-2 focus:ring-brand-500/30 dark:border-dark-border dark:bg-dark-card dark:text-dark-textPrimary"
+                            />
+                          </div>
+                        )}
                       </div>
                       <div className="mt-2 flex justify-end">
                         <button
@@ -1683,7 +1931,13 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                     )
                   ))}
                 </div>
-                <div className="flex justify-end">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-xs text-light-textMuted dark:text-dark-textMuted">
+                    {filingPeriodSchedule.length} of {getFilingPeriodLimit(frequency)} periods added.
+                    {filingPeriodSchedule.length >= getFilingPeriodLimit(frequency)
+                      ? ` Maximum reached for ${frequency}.`
+                      : ` ${frequency} periods follow the selected Financial Year.`}
+                  </p>
                   <button
                     type="button"
                     disabled={
@@ -1692,11 +1946,16 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                       savedFilingPeriodFlags.some((isSaved) => !isSaved)
                     }
                     onClick={() => {
+                      if (filingPeriodSchedule.length >= getFilingPeriodLimit(frequency)) return;
+                      const newPeriodIndex = filingPeriodSchedule.length;
                       setFilingPeriodSchedule((periods) => {
                         const generatedPeriod = buildFilingPeriodSchedule(
                           frequency,
                           financialYear
                         )[periods.length];
+                        if (hasFixedFinancialYearPeriods(frequency) && !generatedPeriod) {
+                          return periods;
+                        }
                         return [
                           ...periods,
                           generatedPeriod || {
@@ -1704,12 +1963,14 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
                             periodTo: '',
                             filingDate: '',
                             extendedDate: '',
+                            extensionReason: '',
                             submissionDate: '',
                             reconciliationDate: '',
                           },
                         ];
                       });
                       setSavedFilingPeriodFlags((flags) => [...flags, false]);
+                      setScrollToScheduleIndex(newPeriodIndex);
                       setHasEditedFilingSchedule(true);
                       setIsDirty(true);
                     }}
@@ -1768,5 +2029,54 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         </div>
       </div>
     </div>
+    {showDiscardConfirmation && (
+      <div
+        className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm animate-in fade-in duration-150"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) setShowDiscardConfirmation(false);
+        }}
+      >
+        <div
+          role="alertdialog"
+          aria-modal="true"
+          aria-labelledby="discard-tax-title"
+          aria-describedby="discard-tax-description"
+          className="w-full max-w-md overflow-hidden rounded-2xl border border-light-border bg-white shadow-2xl dark:border-dark-border dark:bg-dark-card"
+        >
+          <div className="p-5 sm:p-6">
+            <div className="flex items-start gap-3.5">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-300">
+                <AlertCircle className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 pt-0.5">
+                <h3 id="discard-tax-title" className="text-base font-semibold text-light-textPrimary dark:text-dark-textPrimary">
+                  Discard unsaved changes?
+                </h3>
+                <p id="discard-tax-description" className="mt-1.5 text-sm leading-5 text-light-textSecondary dark:text-dark-textSecondary">
+                  Your tax rule and filing schedule edits will be lost if you close this form now.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-col-reverse gap-2 border-t border-light-border bg-light-bg/50 px-5 py-3 dark:border-dark-border dark:bg-dark-cardSecondary/30 sm:flex-row sm:justify-end sm:px-6">
+            <button
+              type="button"
+              onClick={() => setShowDiscardConfirmation(false)}
+              className="rounded-xl border border-light-border px-4 py-2 text-sm font-medium text-light-textSecondary transition-colors hover:bg-white dark:border-dark-border dark:text-dark-textSecondary dark:hover:bg-dark-card"
+            >
+              Keep editing
+            </button>
+            <button
+              type="button"
+              onClick={handleDiscardChanges}
+              className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700"
+            >
+              Discard changes
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
