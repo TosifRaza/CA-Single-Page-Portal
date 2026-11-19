@@ -4,26 +4,19 @@ import {
   Search,
   Edit2,
   Trash2,
-  Mail,
-  Phone,
-  Building2,
-  UserCheck,
   X,
   Briefcase,
   Users,
   Calendar,
   CheckCircle2,
   Clock,
-  AlertCircle,
-  FileText,
   ChevronRight,
-  Filter,
   Eye,
   Building,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
-import { EmployeeItem, WorkMasterItem, ClientItem, WorkAssignmentItem } from '../../types';
+import { EmployeeItem, WorkMasterItem, ClientItem } from '../../types';
 
 interface ClientWorkSummary {
   clientId: string;

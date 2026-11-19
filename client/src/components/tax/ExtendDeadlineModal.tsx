@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { X, Clock, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { TaxFilingItem } from '../../types';

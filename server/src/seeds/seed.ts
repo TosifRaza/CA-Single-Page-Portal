@@ -1,7 +1,6 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import { connectDB, closeDB } from '../config/db.js';
 import { Organization } from '../models/Organization.js';
@@ -10,7 +9,6 @@ import { Client } from '../models/Client.js';
 import { Employee } from '../models/Employee.js';
 import { TaxGroup } from '../models/TaxGroup.js';
 import { TaxMaster } from '../models/TaxMaster.js';
-import { DEFAULT_TAX_GROUPS } from '../controllers/taxGroupController.js';
 import { TaxFiling } from '../models/TaxFiling.js';
 import { WorkMaster } from '../models/WorkMaster.js';
 import { WorkAssignment } from '../models/WorkAssignment.js';
@@ -20,9 +18,7 @@ import { Payment, Notification, ActivityLog } from '../models/Operations.js';
 
 export const seedDatabase = async () => {
   try {
-    if (mongoose.connection.readyState !== 1) {
-      await connectDB();
-    }
+    await connectDB();
     console.log('[Seeder] Connected to database. Clearing existing records...');
 
     await Promise.all([
@@ -67,7 +63,7 @@ export const seedDatabase = async () => {
     });
 
     console.log('[Seeder] Creating Financial Years...');
-    const [fy2026, fy2025] = await Promise.all([
+    const [fy2026] = await Promise.all([
       FinancialYear.create({
         organizationId: org._id,
         yearName: '2026-27',

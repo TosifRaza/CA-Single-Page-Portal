@@ -1,6 +1,13 @@
 import React from 'react';
 import { ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { ArrowUpRight, ArrowDownRight, Users, Briefcase, CheckCircle2, Calendar } from 'lucide-react';
+import {
+  ArrowUpRight,
+  ArrowDownRight,
+  Users,
+  Briefcase,
+  CheckCircle2,
+  Calendar,
+} from 'lucide-react';
 
 interface StatCardProps {
   title: string;

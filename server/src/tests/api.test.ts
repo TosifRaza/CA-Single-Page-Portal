@@ -1,4 +1,10 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+} from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
 import { connectDB, closeDB } from '../config/db.js';

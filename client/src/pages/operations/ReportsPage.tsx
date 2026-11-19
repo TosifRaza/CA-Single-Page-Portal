@@ -11,7 +11,7 @@ import {
   Pie,
   Cell,
 } from 'recharts';
-import { Download, Printer, BarChart3, TrendingUp, Users, CheckCircle } from 'lucide-react';
+import { Printer } from 'lucide-react';
 import api from '../../services/api';
 
 export const ReportsPage: React.FC = () => {
@@ -21,12 +21,10 @@ export const ReportsPage: React.FC = () => {
     employeeProductivity: [],
     paymentsSummary: [],
   });
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        setLoading(true);
         const res = await api.get('/reports/overview');
         if (res.data?.data) {
           setData(res.data.data);
@@ -53,8 +51,6 @@ export const ReportsPage: React.FC = () => {
             { employee: 'Arjun Maitra', totalAssigned: 88, completed: 78, pending: 10, completionRate: 89 },
           ],
         });
-      } finally {
-        setLoading(false);
       }
     };
 

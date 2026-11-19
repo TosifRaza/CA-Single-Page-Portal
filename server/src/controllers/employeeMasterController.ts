@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { Employee } from '../models/Employee.js';
 import { WorkAssignment } from '../models/WorkAssignment.js';
 import { Client } from '../models/Client.js';
@@ -48,53 +47,39 @@ export const getEmployees = async (req: Request, res: Response, next: NextFuncti
       .limit(limitNum);
 
     // Compute assigned works & client stats for each employee
-    const orgId = new mongoose.Types.ObjectId(organizationId);
-    const empIds = employees.map((e) => new mongoose.Types.ObjectId(e._id));
-    const assignmentStats = await WorkAssignment.aggregate([
-      {
-        $match: {
-          organizationId: orgId,
-          employeeId: { $in: empIds },
-          status: { $ne: 'Cancelled' },
-        },
-      },
-      {
-        $group: {
-          _id: '$employeeId',
-          totalWorks: { $sum: 1 },
-          clients: { $addToSet: '$clientId' },
-          pendingWorks: {
-            $sum: { $cond: [{ $in: ['$status', ['Pending', 'In Progress', 'Under Review']] }, 1, 0] },
-          },
-          completedWorks: {
-            $sum: { $cond: [{ $in: ['$status', ['Completed', 'Filed']] }, 1, 0] },
-          },
-        },
-      },
-    ]);
-
     const statsMap = new Map<string, any>();
-    assignmentStats.forEach((stat) => {
-      statsMap.set(stat._id.toString(), {
-        totalWorks: stat.totalWorks,
-        clientsCount: stat.clients ? stat.clients.length : 0,
-        pendingWorks: stat.pendingWorks,
-        completedWorks: stat.completedWorks,
-      });
+    const assignmentStats = await WorkAssignment.find({
+      organizationId,
+      employeeId: { $in: employees.map((employee: any) => employee._id) },
+      status: { $ne: 'Cancelled' },
+    });
+    assignmentStats.forEach((assignment: any) => {
+      const employeeKey = String(assignment.employeeId);
+      const stats = statsMap.get(employeeKey) || {
+        totalWorks: 0,
+        clients: new Set<string>(),
+        pendingWorks: 0,
+        completedWorks: 0,
+      };
+      stats.totalWorks += 1;
+      stats.clients.add(String(assignment.clientId));
+      if (['Pending', 'In Progress', 'Under Review'].includes(assignment.status)) stats.pendingWorks += 1;
+      if (['Completed', 'Filed'].includes(assignment.status)) stats.completedWorks += 1;
+      statsMap.set(employeeKey, stats);
     });
 
-    const employeesWithStats = employees.map((emp) => {
+    const employeesWithStats = employees.map((emp: any) => {
       const empObj = emp.toObject();
-      const stats = statsMap.get(emp._id.toString()) || {
+      const stats = statsMap.get(String(emp._id)) || {
         totalWorks: 0,
-        clientsCount: 0,
+        clients: new Set<string>(),
         pendingWorks: 0,
         completedWorks: 0,
       };
       return {
         ...empObj,
         assignedWorksCount: stats.totalWorks,
-        assignedClientsCount: stats.clientsCount,
+        assignedClientsCount: stats.clients.size,
         pendingWorksCount: stats.pendingWorks,
         completedWorksCount: stats.completedWorks,
       };
@@ -142,7 +127,7 @@ export const createEmployee = async (req: Request, res: Response, next: NextFunc
         if (client && workMaster) {
           const assignCount = await WorkAssignment.countDocuments({ organizationId });
           const workCode = `WRK-${new Date().getFullYear()}-${String(assignCount + 1).padStart(4, '0')}`;
-          const checklist = (workMaster.defaultChecklist || []).map((t) => ({
+          const checklist = (workMaster.defaultChecklist || []).map((t: any) => ({
             title: t,
             completed: false,
           }));
@@ -254,7 +239,7 @@ export const getEmployeeAssignedWorks = async (req: Request, res: Response, next
 
     // Client-wise grouping so you see which works are assigned for which client & count
     const clientMap = new Map<string, any>();
-    works.forEach((w) => {
+    works.forEach((w: any) => {
       const client = w.clientId as any;
       if (!client) return;
       const cid = client._id ? client._id.toString() : 'unknown';
@@ -293,8 +278,8 @@ export const getEmployeeAssignedWorks = async (req: Request, res: Response, next
       stats: {
         totalWorks: works.length,
         uniqueClients: clientSummary.length,
-        pending: works.filter((w) => ['Pending', 'In Progress', 'Under Review'].includes(w.status)).length,
-        completed: works.filter((w) => ['Completed', 'Filed'].includes(w.status)).length,
+        pending: works.filter((w: any) => ['Pending', 'In Progress', 'Under Review'].includes(w.status)).length,
+        completed: works.filter((w: any) => ['Completed', 'Filed'].includes(w.status)).length,
       },
     });
   } catch (error) {
@@ -344,7 +329,7 @@ export const assignWorkToEmployee = async (req: Request, res: Response, next: Ne
     const count = await WorkAssignment.countDocuments({ organizationId });
     const workCode = `WRK-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    const checklist = (workMaster.defaultChecklist || []).map((item) => ({
+    const checklist = (workMaster.defaultChecklist || []).map((item: any) => ({
       title: item,
       completed: false,
     }));

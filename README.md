@@ -2,7 +2,7 @@
 
 A complete, production-ready Chartered Accountant Practice Management System designed for CA firms, tax consultants, accounting firms, and their teams.
 
-Built with high visual fidelity based on the **CA ProFlow** reference design, featuring complete Light and Dark theme implementations, responsive workflows, persistent MongoDB backend, role-based access control, analytics dashboards, and compliance management.
+Built with high visual fidelity based on the **CA ProFlow** reference design, featuring complete Light and Dark theme implementations, responsive workflows, a MySQL database powered by Prisma, role-based access control, analytics dashboards, and compliance management.
 
 ---
 
@@ -56,7 +56,7 @@ Built with high visual fidelity based on the **CA ProFlow** reference design, fe
 ### Backend
 - **Runtime**: Node.js with TypeScript (`tsx` execution)
 - **Framework**: Express.js
-- **Database**: MongoDB with Mongoose ODM (supports both external Dockerized MongoDB and built-in embedded persistent MongoDB fallback)
+- **Database**: MySQL 8 with Prisma ORM
 - **Authentication**: JWT with secure HTTP-only cookies and Bcrypt password hashing
 - **Security**: Helmet, CORS, Rate Limiting, Input Validation (Zod)
 - **File Uploads**: Multer configured for document master
@@ -68,7 +68,7 @@ Built with high visual fidelity based on the **CA ProFlow** reference design, fe
 ### Prerequisites
 - Node.js 18+ (tested on Node v20/v24)
 - npm 9+
-- *(Optional)* Docker Desktop for running containerized MongoDB
+- MySQL 8.0 or newer installed and running locally
 
 ### 1. Installation
 Clone or navigate to the repository root directory:
@@ -79,27 +79,25 @@ npm install
 ```
 
 ### 2. Environment Configuration
-Both `server/.env` and `client/.env` come pre-configured with default settings:
+`.env` is configured for the local MySQL database. When deploying, change its `DATABASE_URL` to your live database connection string.
 
-- **Server (`server/.env`)**:
+- **Server (`.env`)**: local MySQL connection.
   ```env
-  PORT=5000
+  PORT=5001
   NODE_ENV=development
-  MONGODB_URI=mongodb://127.0.0.1:27017/ca_proflow
+  DATABASE_URL=mysql://root@127.0.0.1:3307/ca_proflow
   JWT_SECRET=super_secret_ca_proflow_jwt_key_2026_xyz
   JWT_EXPIRES_IN=1d
   CLIENT_URL=http://localhost:5173
   ```
 
-- **Client (`client/.env`)**:
+- **Client (`client/.env`)**: copy `client/.env.example`.
   ```env
-  VITE_API_URL=http://localhost:5000/api/v1
+  VITE_API_URL=http://localhost:5001/api/v1
   ```
 
 ### 3. Database Setup & Seeding
-The backend is designed for zero friction:
-- If MongoDB is running on `mongodb://127.0.0.1:27017`, it automatically connects to it.
-- If no external MongoDB daemon is detected, the server automatically starts a persistent embedded MongoDB engine backed by `server/db_data/`, preserving all data across restarts!
+The development server starts local MySQL and syncs the Prisma schema automatically. You can also start it manually with `npm run db:local:start`. Database files are stored locally under `server/mysql_data`.
 
 To seed the database with the exact reference numbers (248 clients, 86 pending works, 602 completed filings, 24 upcoming deadlines, 92% compliance rate):
 
@@ -176,21 +174,21 @@ CA Platform/
 │   │   ├── styles/             # Global CSS & Tailwind Custom Directives
 │   │   └── tests/              # Vitest & React Testing Library Specs
 │   ├── tailwind.config.js      # Color tokens matching reference screenshot
-│   └── vite.config.ts          # Vite configuration with proxy to :5000
+│   └── vite.config.ts          # Vite configuration
 │
 ├── server/                     # Node.js + Express + TypeScript Backend
 │   ├── src/
-│   │   ├── config/             # DB Connection & Fallback Persistence
+│   │   ├── config/             # Prisma MySQL Connection
 │   │   ├── controllers/        # REST Controller Functions
 │   │   ├── middlewares/        # JWT Auth, Error Handler, Multer Upload
-│   │   ├── models/             # Mongoose Schemas (Org, User, Client, Tax, Work, etc.)
+│   │   ├── models/             # Prisma-backed models (Org, User, Client, Tax, Work, etc.)
 │   │   ├── routes/             # Express API Endpoints (/api/v1/...)
 │   │   ├── seeds/              # Seed Script with Exact KPI Numbers
 │   │   ├── tests/              # Supertest & Vitest Integration Tests
 │   │   └── validators/         # Zod Request Validation Schemas
-│   └── db_data/                # Persistent Local Database Storage
+│   ├── prisma/                 # Prisma schema for MySQL
+│   └── prisma.config.ts        # Prisma CLI configuration
 │
-├── docker-compose.yml          # Container configuration for local MongoDB 7.0
 └── package.json                # Root npm workspaces configuration
 ```
 

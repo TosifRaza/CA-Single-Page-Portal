@@ -5,7 +5,7 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       NODE_ENV: 'test',
-      MONGODB_URI: 'mongodb://127.0.0.1:27017/ca_proflow_test',
+      DATABASE_URL: 'mysql://root:YOUR_LOCAL_MYSQL_PASSWORD@127.0.0.1:3306/ca_proflow_test',
     },
   },
 });

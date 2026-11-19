@@ -1,7 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { TaxFiling } from '../models/TaxFiling.js';
-import { TaxMaster } from '../models/TaxMaster.js';
 import { FinancialYear } from '../models/Masters.js';
 import { ActivityLog } from '../models/Operations.js';
 import {
@@ -13,7 +11,7 @@ import {
 
 export const getTaxFilings = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = new mongoose.Types.ObjectId(req.user!.organizationId);
+    const organizationId = req.user!.organizationId;
     const {
       clientId,
       taxRuleId,
@@ -29,11 +27,11 @@ export const getTaxFilings = async (req: Request, res: Response, next: NextFunct
     const query: any = { organizationId };
 
     if (clientId && clientId !== 'All') {
-      query.clientId = new mongoose.Types.ObjectId(clientId as string);
+      query.clientId = clientId as string;
     }
 
     if (taxRuleId && taxRuleId !== 'All') {
-      query.taxRuleId = new mongoose.Types.ObjectId(taxRuleId as string);
+      query.taxRuleId = taxRuleId as string;
     }
 
     if (status && status !== 'All') {
@@ -151,20 +149,18 @@ export const createTaxFiling = async (req: Request, res: Response, next: NextFun
       ? Math.round((books - stmt) * 100) / 100
       : 0;
 
-    // Robust FinancialYear resolution: string "2026-27" -> ObjectId
-    let resolvedFinancialYearId: mongoose.Types.ObjectId | undefined = undefined;
+    // Resolve either a financial year ID or a year name such as "2026-27".
+    let resolvedFinancialYearId: string | undefined;
     const rawFy = validated.financialYearId || (req.body as any).financialYear;
     if (rawFy) {
-      if (mongoose.Types.ObjectId.isValid(rawFy)) {
-        resolvedFinancialYearId = new mongoose.Types.ObjectId(rawFy);
-      } else {
-        const fyDoc = await FinancialYear.findOne({ organizationId, yearName: rawFy });
-        if (fyDoc) {
-          resolvedFinancialYearId = fyDoc._id as mongoose.Types.ObjectId;
-        } else {
-          const currentFy = await FinancialYear.findOne({ organizationId, isCurrent: true });
-          resolvedFinancialYearId = currentFy?._id as mongoose.Types.ObjectId | undefined;
-        }
+      const fyDoc = await FinancialYear.findOne({
+        organizationId,
+        $or: [{ _id: rawFy }, { yearName: rawFy }],
+      });
+      if (fyDoc) resolvedFinancialYearId = fyDoc._id;
+      else {
+        const currentFy = await FinancialYear.findOne({ organizationId, isCurrent: true });
+        resolvedFinancialYearId = currentFy?._id;
       }
     }
 
@@ -262,8 +258,11 @@ export const updateTaxFiling = async (req: Request, res: Response, next: NextFun
     }
 
     // Assign allowed fields
-    if (req.body.financialYearId && !mongoose.Types.ObjectId.isValid(req.body.financialYearId)) {
-      const fyDoc = await FinancialYear.findOne({ organizationId, yearName: req.body.financialYearId });
+    if (req.body.financialYearId) {
+      const fyDoc = await FinancialYear.findOne({
+        organizationId,
+        $or: [{ _id: req.body.financialYearId }, { yearName: req.body.financialYearId }],
+      });
       req.body.financialYearId = fyDoc?._id || undefined;
     }
 

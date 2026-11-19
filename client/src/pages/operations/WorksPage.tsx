@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  Search,
-  Plus,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-} from 'lucide-react';
+import { Search, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { WorkAssignmentItem } from '../../types';
 
 export const WorksPage: React.FC = () => {
   const [works, setWorks] = useState<WorkAssignmentItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statusTab, setStatusTab] = useState('All');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -27,7 +17,6 @@ export const WorksPage: React.FC = () => {
 
   const fetchWorks = async () => {
     try {
-      setLoading(true);
       const params = new URLSearchParams();
       if (statusTab !== 'All') params.append('status', statusTab);
       if (search) params.append('search', search);
@@ -42,8 +31,6 @@ export const WorksPage: React.FC = () => {
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 

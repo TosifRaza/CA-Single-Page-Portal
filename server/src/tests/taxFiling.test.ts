@@ -133,7 +133,7 @@ describe('Advanced Tax Rule & Filing Compliance Tests', () => {
     expect(res.body.data.actualSubmissionDate).toBeDefined();
   });
 
-  it('Dashboard stats reflect tax compliance counts from MongoDB', async () => {
+  it('Dashboard stats reflect tax compliance counts from the database', async () => {
     const res = await request(app)
       .get('/api/v1/dashboard/stats')
       .set('Authorization', `Bearer ${authToken}`);

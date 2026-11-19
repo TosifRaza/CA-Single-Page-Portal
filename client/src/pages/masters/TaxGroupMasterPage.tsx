@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
 import {
   Plus,
   Edit2,
@@ -7,7 +6,6 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Receipt,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -75,6 +73,10 @@ export const TaxGroupMasterPage: React.FC = () => {
     e.preventDefault();
     if (!formData.groupName.trim()) {
       toast.error('Tax Group Name is required.');
+      return;
+    }
+    if (formData.groupName.trim().length < 2) {
+      toast.error('Tax group name must be at least 2 characters.');
       return;
     }
 
@@ -151,7 +153,6 @@ export const TaxGroupMasterPage: React.FC = () => {
               <tr className="border-b border-light-border dark:border-dark-border bg-light-bg/40 dark:bg-dark-cardSecondary/40 text-[13px] font-semibold text-light-textSecondary dark:text-dark-textSecondary">
                 <th className="py-3 px-4 w-14">#</th>
                 <th className="py-3 px-4">Tax Group Name</th>
-                <th className="py-3 px-4">Linked Taxes</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -159,13 +160,13 @@ export const TaxGroupMasterPage: React.FC = () => {
             <tbody className="divide-y divide-light-border/60 dark:divide-dark-border/60 font-medium">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={4} className="py-12 text-center text-light-textMuted font-medium">
                     Loading tax groups...
                   </td>
                 </tr>
               ) : taxGroups.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center text-light-textMuted font-medium">
+                  <td colSpan={4} className="py-12 text-center text-light-textMuted font-medium">
                     No tax groups found. Click "+ Add Tax Group" to create one.
                   </td>
                 </tr>
@@ -180,22 +181,6 @@ export const TaxGroupMasterPage: React.FC = () => {
                     </td>
                     <td className="py-3.5 px-4 font-bold text-light-textPrimary dark:text-dark-textPrimary">
                       {g.groupName}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {(g.linkedTaxesCount ?? 0) > 0 ? (
-                        <NavLink
-                          to="/masters/tax"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[13px] font-semibold bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-300 border border-brand-200 dark:border-brand-500/30 transition-all cursor-pointer"
-                          title="View taxes under this group in Tax Master"
-                        >
-                          <Receipt className="w-3.5 h-3.5 text-brand-500" />
-                          <span>
-                            {g.linkedTaxesCount} {g.linkedTaxesCount === 1 ? 'Tax' : 'Taxes'}
-                          </span>
-                        </NavLink>
-                      ) : (
-                        <span className="text-[13px] text-light-textMuted italic">0 Taxes</span>
-                      )}
                     </td>
                     <td className="py-3.5 px-4">
                       {g.status === 'active' ? (

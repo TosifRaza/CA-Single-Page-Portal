@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Building2, Save, Bell, Shield, Globe } from 'lucide-react';
+import { Building2, Save, Globe } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
 export const GeneralSettingsPage: React.FC = () => {
-  const { organization, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
 
   const [formData, setFormData] = useState({
     name: 'RIZ & Associates',

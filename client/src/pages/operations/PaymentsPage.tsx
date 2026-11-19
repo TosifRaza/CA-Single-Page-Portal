@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Plus, Search, IndianRupee, CreditCard, CheckCircle2, Clock, X } from 'lucide-react';
+import { Plus, Search, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { PaymentItem, ClientItem } from '../../types';
@@ -9,7 +8,6 @@ export const PaymentsPage: React.FC = () => {
   const [payments, setPayments] = useState<PaymentItem[]>([]);
   const [clients, setClients] = useState<ClientItem[]>([]);
   const [summary, setSummary] = useState({ totalBilled: 0, totalCollected: 0, pendingAmount: 0 });
-  const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,7 +25,6 @@ export const PaymentsPage: React.FC = () => {
 
   const loadPayments = async () => {
     try {
-      setLoading(true);
       const [pRes, cRes] = await Promise.all([
         api.get(`/payments?status=${statusFilter}&search=${encodeURIComponent(search)}`),
         api.get('/clients?limit=50'),
@@ -45,8 +42,6 @@ export const PaymentsPage: React.FC = () => {
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 

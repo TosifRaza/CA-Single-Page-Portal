@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { TaxGroup } from '../models/TaxGroup.js';
 import { TaxMaster } from '../models/TaxMaster.js';
 import { WorkMaster } from '../models/WorkMaster.js';
@@ -113,30 +112,19 @@ export const getTaxGroups = async (req: Request, res: Response, next: NextFuncti
     let groups = await TaxGroup.find(query).sort({ isSystemDefault: -1, createdAt: 1 });
 
     // Aggregate linked taxes count from TaxMaster
-    const orgObjId = new mongoose.Types.ObjectId(organizationId);
-    const taxCounts = await TaxMaster.aggregate([
-      {
-        $match: {
-          organizationId: orgObjId,
-          status: { $ne: 'Archived' },
-        },
-      },
-      {
-        $group: {
-          _id: '$taxGroup',
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    const countMap = new Map<string, number>();
-    taxCounts.forEach((tc) => {
-      if (tc._id) {
-        countMap.set(tc._id.toString().trim().toUpperCase(), tc.count);
-      }
+    const organizationTaxes = await TaxMaster.find({
+      organizationId,
+      status: { $ne: 'Archived' },
+    });
+    const taxCounts = new Map<string, number>();
+    organizationTaxes.forEach((tax: any) => {
+      const key = String(tax.taxGroup || '').trim().toUpperCase();
+      if (key) taxCounts.set(key, (taxCounts.get(key) || 0) + 1);
     });
 
-    const groupsWithCounts = groups.map((g) => {
+    const countMap = taxCounts;
+
+    const groupsWithCounts = groups.map((g: any) => {
       const gObj = g.toObject();
       const codeCount = countMap.get(g.groupCode.trim().toUpperCase()) || 0;
       const nameCount = countMap.get(g.groupName.trim().toUpperCase()) || 0;
@@ -252,13 +240,15 @@ export const deleteTaxGroup = async (req: Request, res: Response, next: NextFunc
       ],
     });
 
-    const taxIds = linkedTaxes.map((t) => t._id);
+    const taxIds = linkedTaxes.map((t: any) => t._id);
 
     if (taxIds.length > 0) {
+      const linkedWorks = await WorkMaster.find({ organizationId, taxId: { $in: taxIds } });
+      const linkedWorkIds = linkedWorks.map((work: any) => work._id);
       // 1. Delete dependent Work Masters
-      await WorkMaster.deleteMany({ organizationId, taxId: { $in: taxIds } });
+      if (linkedWorkIds.length) await WorkMaster.deleteMany({ organizationId, _id: { $in: linkedWorkIds } });
       // 2. Delete dependent Work Assignments
-      await WorkAssignment.deleteMany({ organizationId, taxId: { $in: taxIds } });
+      if (linkedWorkIds.length) await WorkAssignment.deleteMany({ organizationId, workMasterId: { $in: linkedWorkIds } });
       // 3. Delete dependent Tax Filings
       await TaxFiling.deleteMany({ organizationId, taxRuleId: { $in: taxIds } });
       // 4. Delete the Tax Rules themselves

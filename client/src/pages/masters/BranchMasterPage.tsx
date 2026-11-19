@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Plus, Building2, Phone, Mail, MapPin, X } from 'lucide-react';
+import {
+  Plus,
+  Phone,
+  Mail,
+  MapPin,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 

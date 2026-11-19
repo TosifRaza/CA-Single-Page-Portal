@@ -1,92 +1,66 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { WorkAssignment } from '../models/WorkAssignment.js';
 import { Employee } from '../models/Employee.js';
-import { Client } from '../models/Client.js';
+import { WorkMaster } from '../models/WorkMaster.js';
 import { Payment } from '../models/Operations.js';
 
 export const getReportsOverview = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = new mongoose.Types.ObjectId(req.user!.organizationId);
-
-    // Work status distribution
-    const statusCounts = await WorkAssignment.aggregate([
-      { $match: { organizationId } },
-      { $group: { _id: '$status', count: { $sum: 1 } } },
+    const organizationId = req.user!.organizationId;
+    const [assignments, payments] = await Promise.all([
+      WorkAssignment.find({ organizationId }),
+      Payment.find({ organizationId }),
     ]);
 
-    // Work category breakdown
-    const categoryCounts = await WorkAssignment.aggregate([
-      { $match: { organizationId } },
-      {
-        $lookup: {
-          from: 'workmasters',
-          localField: 'workMasterId',
-          foreignField: '_id',
-          as: 'master',
-        },
-      },
-      { $unwind: '$master' },
-      { $group: { _id: '$master.category', count: { $sum: 1 } } },
+    const statusCounts = new Map<string, number>();
+    const categoryCounts = new Map<string, number>();
+    const employeeGroups = new Map<string, { totalAssigned: number; completed: number; pending: number }>();
+    const workMasterIds = [...new Set(assignments.map((assignment: any) => assignment.workMasterId))];
+    const employeeIds = [...new Set(assignments.map((assignment: any) => assignment.employeeId))];
+    const [workMasters, employees] = await Promise.all([
+      workMasterIds.length ? WorkMaster.find({ _id: { $in: workMasterIds } }) : [],
+      employeeIds.length ? Employee.find({ _id: { $in: employeeIds } }) : [],
     ]);
+    const workMasterById = new Map<string, any>(workMasters.map((work: any) => [work._id, work]));
+    const employeeById = new Map<string, any>(employees.map((employee: any) => [employee._id, employee]));
 
-    // Employee productivity
-    const employeeStats = await WorkAssignment.aggregate([
-      { $match: { organizationId } },
-      {
-        $lookup: {
-          from: 'employees',
-          localField: 'employeeId',
-          foreignField: '_id',
-          as: 'employee',
-        },
-      },
-      { $unwind: '$employee' },
-      {
-        $group: {
-          _id: '$employee.name',
-          totalAssigned: { $sum: 1 },
-          completed: {
-            $sum: {
-              $cond: [{ $in: ['$status', ['Completed', 'Filed']] }, 1, 0],
-            },
-          },
-          pending: {
-            $sum: {
-              $cond: [{ $in: ['$status', ['Pending', 'In Progress', 'Under Review']] }, 1, 0],
-            },
-          },
-        },
-      },
-      { $sort: { totalAssigned: -1 } },
-    ]);
+    for (const assignment of assignments as any[]) {
+      statusCounts.set(assignment.status, (statusCounts.get(assignment.status) || 0) + 1);
 
-    // Financial revenue summary
-    const paymentsSummary = await Payment.aggregate([
-      { $match: { organizationId } },
-      {
-        $group: {
-          _id: '$status',
-          total: { $sum: '$amount' },
-          collected: { $sum: '$paidAmount' },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+      const category = workMasterById.get(assignment.workMasterId)?.category;
+      if (category) categoryCounts.set(category, (categoryCounts.get(category) || 0) + 1);
+
+      const employeeName = employeeById.get(assignment.employeeId)?.name;
+      if (!employeeName) continue;
+      const stats = employeeGroups.get(employeeName) || { totalAssigned: 0, completed: 0, pending: 0 };
+      stats.totalAssigned += 1;
+      if (['Completed', 'Filed'].includes(assignment.status)) stats.completed += 1;
+      if (['Pending', 'In Progress', 'Under Review'].includes(assignment.status)) stats.pending += 1;
+      employeeGroups.set(employeeName, stats);
+    }
+
+    const paymentsByStatus = new Map<string, { total: number; collected: number; count: number }>();
+    for (const payment of payments as any[]) {
+      const summary = paymentsByStatus.get(payment.status) || { total: 0, collected: 0, count: 0 };
+      summary.total += Number(payment.amount) || 0;
+      summary.collected += Number(payment.paidAmount) || 0;
+      summary.count += 1;
+      paymentsByStatus.set(payment.status, summary);
+    }
 
     res.json({
       success: true,
       data: {
-        statusBreakdown: statusCounts.map((s) => ({ status: s._id, count: s.count })),
-        categoryBreakdown: categoryCounts.map((c) => ({ category: c._id, count: c.count })),
-        employeeProductivity: employeeStats.map((e) => ({
-          employee: e._id,
-          totalAssigned: e.totalAssigned,
-          completed: e.completed,
-          pending: e.pending,
-          completionRate: e.totalAssigned > 0 ? Math.round((e.completed / e.totalAssigned) * 100) : 0,
+        statusBreakdown: [...statusCounts].map(([status, count]) => ({ status, count })),
+        categoryBreakdown: [...categoryCounts].map(([category, count]) => ({ category, count })),
+        employeeProductivity: [...employeeGroups].map(([employee, stats]) => ({
+          employee,
+          ...stats,
+          completionRate: stats.totalAssigned > 0
+            ? Math.round((stats.completed / stats.totalAssigned) * 100)
+            : 0,
         })),
-        paymentsSummary,
+        paymentsSummary: [...paymentsByStatus].map(([_id, summary]) => ({ _id, ...summary })),
       },
     });
   } catch (error) {

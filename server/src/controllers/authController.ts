@@ -115,7 +115,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
       status: 'active',
     });
 
-    const { accessToken, refreshToken } = generateTokens(user);
+    const { accessToken } = generateTokens(user);
 
     res.status(201).json({
       success: true,
@@ -139,7 +139,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
   }
 };
 
-export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+export const refreshToken = async (req: Request, res: Response): Promise<void> => {
   try {
     const token = req.cookies?.refreshToken || req.body?.refreshToken;
     if (!token) {

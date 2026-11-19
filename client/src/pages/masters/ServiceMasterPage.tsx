@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Plus, Layers, Clock, IndianRupee, X } from 'lucide-react';
+import { Plus, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 

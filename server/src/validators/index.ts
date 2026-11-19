@@ -52,7 +52,7 @@ export const clientSchema = z.object({
 });
 
 export const taxGroupSchema = z.object({
-  groupName: z.string().min(2, 'Group name is required'),
+  groupName: z.string().trim().min(2, 'Group name must be at least 2 characters'),
   groupCode: z.string().optional(),
   dueDate: z.string().optional(),
   description: z.string().optional(),

@@ -1,6 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, UserPlus, DollarSign, Clock } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  UserPlus,
+  DollarSign,
+  Clock,
+} from 'lucide-react';
 
 interface ActivityItem {
   id: string;

@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { WorkMaster } from '../models/WorkMaster.js';
 import { WorkAssignment } from '../models/WorkAssignment.js';
 import { Employee } from '../models/Employee.js';
@@ -39,7 +38,7 @@ export const getWorkMasters = async (req: Request, res: Response, next: NextFunc
           { taxGroup: { $regex: search, $options: 'i' } },
         ],
       });
-      const matchingTaxIds = matchingTaxes.map((t) => t._id);
+      const matchingTaxIds = matchingTaxes.map((t: any) => t._id);
 
       query.$or = [
         { workName: { $regex: search, $options: 'i' } },
@@ -61,41 +60,27 @@ export const getWorkMasters = async (req: Request, res: Response, next: NextFunc
       .limit(limitNum);
 
     // Compute assigned employees & clients for these Work Masters
-    const orgId = new mongoose.Types.ObjectId(organizationId);
-    const workIds = works.map((w) => new mongoose.Types.ObjectId(w._id));
-    const assignmentStats = await WorkAssignment.aggregate([
-      {
-        $match: {
-          organizationId: orgId,
-          workMasterId: { $in: workIds },
-          status: { $ne: 'Cancelled' },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            workMasterId: '$workMasterId',
-            employeeId: '$employeeId',
-          },
-          count: { $sum: 1 },
-          clients: { $addToSet: '$clientId' },
-        },
-      },
-      {
-        $lookup: {
-          from: 'employees',
-          localField: '_id.employeeId',
-          foreignField: '_id',
-          as: 'employee',
-        },
-      },
-      {
-        $unwind: {
-          path: '$employee',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-    ]);
+    const assignments = await WorkAssignment.find({
+      organizationId,
+      workMasterId: { $in: works.map((work: any) => work._id) },
+      status: { $ne: 'Cancelled' },
+    });
+    const employeeIds = [...new Set(assignments.map((assignment: any) => assignment.employeeId))];
+    const employees = employeeIds.length ? await Employee.find({ _id: { $in: employeeIds } }) : [];
+    const employeeById = new Map<string, any>(employees.map((employee: any) => [employee._id, employee]));
+    const assignmentGroups = new Map<string, { workMasterId: string; employeeId: string; count: number; clients: Set<string> }>();
+    assignments.forEach((assignment: any) => {
+      const key = `${assignment.workMasterId}:${assignment.employeeId}`;
+      const group = assignmentGroups.get(key) || {
+        workMasterId: String(assignment.workMasterId),
+        employeeId: String(assignment.employeeId),
+        count: 0,
+        clients: new Set<string>(),
+      };
+      group.count += 1;
+      group.clients.add(String(assignment.clientId));
+      assignmentGroups.set(key, group);
+    });
 
     const workStatsMap = new Map<string, {
       totalAssignments: number;
@@ -110,8 +95,8 @@ export const getWorkMasters = async (req: Request, res: Response, next: NextFunc
       }>;
     }>();
 
-    assignmentStats.forEach((stat) => {
-      const wId = stat._id.workMasterId.toString();
+    assignmentGroups.forEach((stat) => {
+      const wId = stat.workMasterId;
       if (!workStatsMap.has(wId)) {
         workStatsMap.set(wId, {
           totalAssignments: 0,
@@ -121,23 +106,24 @@ export const getWorkMasters = async (req: Request, res: Response, next: NextFunc
       }
       const entry = workStatsMap.get(wId)!;
       entry.totalAssignments += stat.count;
-      (stat.clients || []).forEach((c: any) => entry.uniqueClients.add(c.toString()));
+      stat.clients.forEach((clientId) => entry.uniqueClients.add(clientId));
 
-      if (stat.employee) {
+      const employee = employeeById.get(stat.employeeId);
+      if (employee) {
         entry.assignedEmployees.push({
-          employeeId: stat.employee._id.toString(),
-          employeeName: stat.employee.name,
-          employeeCode: stat.employee.employeeCode,
-          designation: stat.employee.designation,
+          employeeId: String(employee._id),
+          employeeName: employee.name,
+          employeeCode: employee.employeeCode,
+          designation: employee.designation,
           count: stat.count,
-          clientsCount: (stat.clients || []).length,
+          clientsCount: stat.clients.size,
         });
       }
     });
 
-    const worksWithStats = works.map((w) => {
+    const worksWithStats = works.map((w: any) => {
       const wObj = w.toObject();
-      const stats = workStatsMap.get(w._id.toString());
+      const stats = workStatsMap.get(String(w._id));
       return {
         ...wObj,
         totalAssignmentsCount: stats ? stats.totalAssignments : 0,
@@ -186,7 +172,7 @@ export const getWorkMasterAssignments = async (req: Request, res: Response, next
 
     // Group by employee
     const employeeMap = new Map<string, any>();
-    assignments.forEach((a) => {
+    assignments.forEach((a: any) => {
       const emp = a.employeeId as any;
       if (!emp) return;
       const empId = emp._id ? emp._id.toString() : 'unknown';
@@ -277,7 +263,7 @@ export const assignWorkMasterToEmployee = async (req: Request, res: Response, ne
     const count = await WorkAssignment.countDocuments({ organizationId });
     const workCode = `WRK-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
-    const checklist = (workMaster.defaultChecklist || []).map((item) => ({
+      const checklist = (workMaster.defaultChecklist || []).map((item: any) => ({
       title: item,
       completed: false,
     }));

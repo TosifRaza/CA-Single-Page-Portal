@@ -1,0 +1,436 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model Organization {
+  id        String   @id @default(cuid()) @db.VarChar(191)
+  name      String   @db.VarChar(191)
+  logo      String?  @db.Text
+  email     String   @db.VarChar(191)
+  phone     String?  @db.VarChar(64)
+  address   Json?
+  settings  Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("organizations")
+}
+
+model User {
+  id           String    @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  name         String    @db.VarChar(191)
+  email        String    @db.VarChar(191)
+  passwordHash String    @db.VarChar(255)
+  role         String    @default("Employee") @db.VarChar(64)
+  employeeId   String?   @db.VarChar(191)
+  avatar       String?   @db.Text
+  status       String    @default("active") @db.VarChar(32)
+  lastLogin    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+  @@index([email])
+  @@map("users")
+}
+
+model Employee {
+  id           String    @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  employeeCode String    @db.VarChar(64)
+  name         String    @db.VarChar(191)
+  email        String    @db.VarChar(191)
+  mobile       String    @db.VarChar(64)
+  designation  String    @db.VarChar(191)
+  department   String    @db.VarChar(191)
+  branchId     String?   @db.VarChar(191)
+  managerId    String?   @db.VarChar(191)
+  joiningDate  DateTime?
+  permissions  Json?
+  status       String    @default("active") @db.VarChar(32)
+  userId       String?   @db.VarChar(191)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([organizationId, employeeCode])
+  @@index([organizationId, email])
+  @@index([organizationId])
+  @@index([name])
+  @@index([status])
+  @@map("employees")
+}
+
+model FinancialYear {
+  id             String   @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  yearName       String   @db.VarChar(32)
+  assessmentYear String   @db.VarChar(32)
+  startDate      DateTime
+  endDate        DateTime
+  isCurrent      Boolean  @default(false)
+  status         String   @default("active") @db.VarChar(32)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, yearName])
+  @@index([organizationId])
+  @@map("financial_years")
+}
+
+model Branch {
+  id             String   @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  branchName     String   @db.VarChar(191)
+  branchCode     String   @db.VarChar(64)
+  address        String?  @db.Text
+  city           String?  @db.VarChar(191)
+  state          String?  @db.VarChar(191)
+  phone          String?  @db.VarChar(64)
+  email          String?  @db.VarChar(191)
+  managerId      String?  @db.VarChar(191)
+  status         String   @default("active") @db.VarChar(32)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, branchCode])
+  @@index([organizationId])
+  @@map("branches")
+}
+
+model Service {
+  id                String   @id @default(cuid()) @db.VarChar(191)
+  organizationId    String   @db.VarChar(191)
+  serviceName       String   @db.VarChar(191)
+  category          String   @db.VarChar(100)
+  description       String?  @db.Text
+  defaultPrice      Float    @default(0)
+  estimatedDuration String   @default("3 Days") @db.VarChar(100)
+  status            String   @default("active") @db.VarChar(32)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([organizationId])
+  @@map("services")
+}
+
+model Client {
+  id               String    @id @default(cuid()) @db.VarChar(191)
+  organizationId   String    @db.VarChar(191)
+  clientCode       String    @db.VarChar(64)
+  clientType       String    @default("Individual") @db.VarChar(64)
+  businessType     String    @default("Proprietorship") @db.VarChar(64)
+  groupName        String?   @db.VarChar(191)
+  cin              String?   @db.VarChar(64)
+  incorporationDate DateTime?
+  name             String    @db.VarChar(191)
+  businessName     String?   @db.VarChar(191)
+  pan              String    @db.VarChar(32)
+  gstin            String?   @db.VarChar(32)
+  email            String    @db.VarChar(191)
+  mobile           String    @db.VarChar(64)
+  secondaryEmail   String?   @db.VarChar(191)
+  alternateMobile  String?   @db.VarChar(64)
+  contactPerson    String?   @db.VarChar(191)
+  designation      String?   @db.VarChar(191)
+  businessRegNo    String?   @db.VarChar(191)
+  businessCategory String?   @db.VarChar(191)
+  industry         String?   @db.VarChar(191)
+  businessStartDate DateTime?
+  gstUsername      String?   @db.VarChar(191)
+  itUsername       String?   @db.VarChar(191)
+  tracesUsername   String?   @db.VarChar(191)
+  address          Json?
+  financialYearId  String?   @db.VarChar(191)
+  assignedEmployeeId String? @db.VarChar(191)
+  status           String    @default("active") @db.VarChar(32)
+  notes            String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@unique([organizationId, clientCode])
+  @@index([organizationId, pan])
+  @@index([organizationId])
+  @@index([groupName])
+  @@index([name])
+  @@index([status])
+  @@map("clients")
+}
+
+model TaxGroup {
+  id                   String   @id @default(cuid()) @db.VarChar(191)
+  organizationId       String   @db.VarChar(191)
+  groupName            String   @db.VarChar(191)
+  groupCode            String   @db.VarChar(64)
+  description          String?  @db.Text
+  defaultFrequency     String   @default("Monthly") @db.VarChar(64)
+  dueDate              String?  @db.VarChar(191)
+  applicableClientTypes Json?
+  reconciliationTypes  Json?
+  status               String   @default("active") @db.VarChar(32)
+  isSystemDefault      Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([organizationId, groupCode])
+  @@index([organizationId, groupName])
+  @@index([organizationId])
+  @@index([status])
+  @@map("tax_groups")
+}
+
+model TaxMaster {
+  id                            String    @id @default(cuid()) @db.VarChar(191)
+  organizationId                String    @db.VarChar(191)
+  taxId                         Int
+  taxCode                       String?   @db.VarChar(191)
+  taxGroup                      String    @db.VarChar(191)
+  taxName                       String    @db.VarChar(191)
+  description                   String?   @db.Text
+  frequency                     String    @db.VarChar(64)
+  filingFrequency               String?   @db.VarChar(64)
+  dueDateRule                   String    @db.VarChar(191)
+  applicableFinancialYear       String?   @db.VarChar(64)
+  applicableClientTypes         Json?
+  applicableBusinessCategoryOther String? @db.VarChar(191)
+  periodFrom                    DateTime?
+  periodTo                      DateTime?
+  filingPeriod                  String?   @db.VarChar(191)
+  originalDueDate               DateTime?
+  extendedDueDate               DateTime?
+  effectiveDueDate              DateTime?
+  submissionDate                DateTime?
+  actualSubmissionDate          DateTime?
+  submissionMethod              String?   @db.VarChar(64)
+  filingStatus                  String?   @db.VarChar(64)
+  acknowledgementNumber         String?   @db.VarChar(191)
+  reconciliationRequired       Boolean   @default(false)
+  reconciliationDate            DateTime?
+  defaultReconciliationType     String?   @db.VarChar(191)
+  filingSchedule                Json?
+  reminderSettings              Json?
+  priority                      String    @default("Medium") @db.VarChar(32)
+  status                        String    @default("Active") @db.VarChar(32)
+  createdBy                     String?   @db.VarChar(191)
+  createdAt                     DateTime  @default(now())
+  updatedAt                     DateTime  @updatedAt
+
+  @@unique([organizationId, taxId])
+  @@index([taxGroup])
+  @@index([organizationId])
+  @@index([taxName])
+  @@index([status])
+  @@map("tax_masters")
+}
+
+model WorkMaster {
+  id                   String   @id @default(cuid()) @db.VarChar(191)
+  organizationId       String   @db.VarChar(191)
+  workId               Int
+  workName             String   @db.VarChar(191)
+  category             String   @db.VarChar(64)
+  taxId                String?  @db.VarChar(191)
+  timeline             String   @db.VarChar(191)
+  description          String?  @db.Text
+  defaultPriority      String   @default("Medium") @db.VarChar(32)
+  defaultChecklist     Json?
+  defaultDocuments     Json?
+  defaultDocumentFiles Json?
+  status               String   @default("Active") @db.VarChar(32)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@unique([organizationId, workId])
+  @@index([organizationId])
+  @@index([workName])
+  @@index([category])
+  @@index([status])
+  @@map("work_masters")
+}
+
+model WorkAssignment {
+  id             String    @id @default(cuid()) @db.VarChar(191)
+  organizationId String    @db.VarChar(191)
+  workCode       String    @db.VarChar(64)
+  clientId       String    @db.VarChar(191)
+  workMasterId   String    @db.VarChar(191)
+  employeeId     String    @db.VarChar(191)
+  assignedBy     String?   @db.VarChar(191)
+  startDate      DateTime  @default(now())
+  dueDate        DateTime
+  priority       String    @default("Medium") @db.VarChar(32)
+  status         String    @default("Pending") @db.VarChar(32)
+  remarks        String?   @db.Text
+  checklist      Json?
+  filingReference String?  @db.VarChar(191)
+  completedAt    DateTime?
+  filedAt        DateTime?
+  financialYearId String?  @db.VarChar(191)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([organizationId, workCode])
+  @@index([organizationId, status, dueDate])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([workMasterId])
+  @@index([employeeId])
+  @@index([dueDate])
+  @@map("work_assignments")
+}
+
+model DocumentCategory {
+  id             String   @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  name           String   @db.VarChar(191)
+  code           String   @db.VarChar(64)
+  description    String?  @db.Text
+  allowedTypes   Json?
+  maxSizeMb      Float    @default(10)
+  status         String   @default("active") @db.VarChar(32)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+  @@map("document_categories")
+}
+
+model Document {
+  id             String    @id @default(cuid()) @db.VarChar(191)
+  organizationId String    @db.VarChar(191)
+  clientId       String?   @db.VarChar(191)
+  workAssignmentId String? @db.VarChar(191)
+  categoryId     String?   @db.VarChar(191)
+  filename       String    @db.VarChar(191)
+  originalName   String    @db.VarChar(191)
+  storagePath    String    @db.VarChar(1024)
+  mimeType       String    @db.VarChar(191)
+  fileSize       Int
+  uploadedBy     String?   @db.VarChar(191)
+  description    String?   @db.Text
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([workAssignmentId])
+  @@index([categoryId])
+  @@map("documents")
+}
+
+model Payment {
+  id              String   @id @default(cuid()) @db.VarChar(191)
+  organizationId  String   @db.VarChar(191)
+  paymentCode     String   @db.VarChar(64)
+  clientId        String   @db.VarChar(191)
+  workAssignmentId String? @db.VarChar(191)
+  invoiceNumber   String?  @db.VarChar(191)
+  amount          Float
+  paidAmount      Float    @default(0)
+  paymentDate     DateTime @default(now())
+  paymentMethod   String   @default("Bank Transfer") @db.VarChar(64)
+  status          String   @default("Pending") @db.VarChar(32)
+  reference       String?  @db.VarChar(191)
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([organizationId, paymentCode])
+  @@index([organizationId])
+  @@index([clientId])
+  @@index([status])
+  @@map("payments")
+}
+
+model Notification {
+  id             String   @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  userId         String?  @db.VarChar(191)
+  type           String   @default("info") @db.VarChar(32)
+  title          String   @db.VarChar(191)
+  message        String   @db.Text
+  relatedEntity  Json?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id             String   @id @default(cuid()) @db.VarChar(191)
+  organizationId String   @db.VarChar(191)
+  actorId        String?  @db.VarChar(191)
+  actorName      String   @default("System") @db.VarChar(191)
+  action         String   @db.Text
+  entityType     String   @db.VarChar(64)
+  entityId       String?  @db.VarChar(191)
+  details        String?  @db.Text
+  icon           String?  @default("check") @db.VarChar(64)
+  color          String?  @default("blue") @db.VarChar(64)
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("activity_logs")
+}
+
+model TaxFiling {
+  id                        String    @id @default(cuid()) @db.VarChar(191)
+  organizationId            String    @db.VarChar(191)
+  taxRuleId                 String    @db.VarChar(191)
+  clientId                  String    @db.VarChar(191)
+  financialYearId            String?   @db.VarChar(191)
+  financialYear             String?   @db.VarChar(64)
+  periodFrom                DateTime
+  periodTo                  DateTime
+  filingPeriod              String?   @db.VarChar(191)
+  originalDueDate           DateTime
+  extendedDueDate           DateTime?
+  effectiveDueDate          DateTime
+  extensionReason           String?   @db.Text
+  extensionReference        String?   @db.VarChar(191)
+  extensionHistory          Json?
+  actualSubmissionDate      DateTime?
+  filingStatus              String    @default("Pending") @db.VarChar(64)
+  acknowledgementNumber     String?   @db.VarChar(191)
+  submissionMethod          String?   @default("Portal") @db.VarChar(64)
+  submittedBy               String?   @db.VarChar(191)
+  filingRemarks             String?   @db.Text
+  assignedEmployeeId        String?   @db.VarChar(191)
+  reconciliationRequired    Boolean   @default(false)
+  reconciliationType        String?   @db.VarChar(191)
+  reconciliationStatus      String    @default("Not Required") @db.VarChar(64)
+  reconciliationStartDate   DateTime?
+  reconciliationCompletionDate DateTime?
+  amountAsPerBooks          Float     @default(0)
+  amountAsPerStatement      Float     @default(0)
+  differenceAmount          Float     @default(0)
+  reconciledBy              String?   @db.VarChar(191)
+  reconciliationRemarks     String?   @db.Text
+  documentIds               Json?
+  priority                  String    @default("Medium") @db.VarChar(32)
+  approvalRequired          Boolean   @default(false)
+  reminderEnabled           Boolean   @default(true)
+  reminderDays              Json?
+  internalNotes             String?   @db.Text
+  createdAt                 DateTime  @default(now())
+  updatedAt                 DateTime  @updatedAt
+
+  @@index([organizationId])
+  @@index([taxRuleId])
+  @@index([clientId])
+  @@index([effectiveDueDate])
+  @@index([filingStatus])
+  @@index([reconciliationStatus])
+  @@index([organizationId, taxRuleId, clientId, periodFrom, periodTo])
+  @@map("tax_filings")
+}

@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import {
-  Calendar,
-  ClipboardList,
-  CheckCircle2,
-  Clock,
-  AlertCircle,
-  Filter,
-} from 'lucide-react';
+import { ClipboardList, CheckCircle2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { WorkAssignmentItem, ClientItem, WorkMasterItem, EmployeeItem } from '../../types';
@@ -73,7 +66,7 @@ export const WorkAssignmentPage: React.FC = () => {
     }
 
     try {
-      const res = await api.post('/work-assignments', formData);
+      await api.post('/work-assignments', formData);
       toast.success('Work assigned successfully! Assignment ID created.');
       setFormData({
         clientId: '',

@@ -134,7 +134,7 @@ export const createWorkAssignment = async (req: Request, res: Response, next: Ne
     const workCode = `WRK-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`;
 
     // Initialize checklist from template if present
-    const checklist = (workMaster.defaultChecklist || []).map((item) => ({
+    const checklist = (workMaster.defaultChecklist || []).map((item: any) => ({
       title: item,
       completed: false,
     }));

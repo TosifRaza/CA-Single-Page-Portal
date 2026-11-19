@@ -4,24 +4,15 @@ import {
   X,
   Plus,
   AlertCircle,
-  CheckCircle2,
-  HelpCircle,
-  FileText,
-  Upload,
-  RefreshCw,
-  Bell,
-  Clock,
-  ShieldAlert,
   Layers,
   FolderTree,
-  Building,
   Check,
   ChevronDown,
   Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
-import { TaxMasterItem, EmployeeItem, TaxGroupItem } from '../../types';
+import { TaxMasterItem, TaxGroupItem } from '../../types';
 import { PeriodDueDatePicker } from './PeriodDueDatePicker';
 
 interface TaxRuleModalProps {
@@ -266,14 +257,6 @@ const TAX_GROUP_CONFIG: Record<
     allowedFrequencies: string[];
     defaultClientTypes: string[];
     reconciliationTypes: string[];
-    suggestions: Array<{
-      name: string;
-      desc: string;
-      freq: string;
-      periodDesc: string;
-      dueRule: string;
-      clientTypes?: string[];
-    }>;
   }
 > = {
   GST: {
@@ -286,29 +269,6 @@ const TAX_GROUP_CONFIG: Record<
       'Books vs Filed GSTR-3B',
       'Custom GST Reconciliation',
     ],
-    suggestions: [
-      {
-        name: 'GSTR-1',
-        desc: 'Outward supplies statement (Sales)',
-        freq: 'Monthly',
-        periodDesc: 'Monthly (e.g. Nov 2026)',
-        dueRule: 'Due on 11th Next Month',
-      },
-      {
-        name: 'GSTR-3B',
-        desc: 'Monthly summary return & tax payment',
-        freq: 'Monthly',
-        periodDesc: 'Monthly (e.g. Nov 2026)',
-        dueRule: 'Due on 20th Next Month',
-      },
-      {
-        name: 'GSTR-9',
-        desc: 'Annual return for regular taxpayers',
-        freq: 'Yearly',
-        periodDesc: 'Financial Year',
-        dueRule: 'Due on 31st Dec',
-      },
-    ],
   },
   'Income Tax': {
     defaultFrequency: 'Yearly',
@@ -319,40 +279,6 @@ const TAX_GROUP_CONFIG: Record<
       'Advance Tax Paid vs Portal Challans',
       'Books Balance Sheet vs ITR Financials',
     ],
-    suggestions: [
-      {
-        name: 'ITR-1 (Sahaj)',
-        desc: 'Salaried individuals with income up to ₹50 Lakh',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (AY 2027-28)',
-        dueRule: 'Due on 31st July',
-        clientTypes: ['Individual'],
-      },
-      {
-        name: 'ITR-4 (Sugam)',
-        desc: 'Presumptive business & profession (44AD / 44ADA)',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (AY 2027-28)',
-        dueRule: 'Due on 31st July',
-        clientTypes: ['Individual', 'Partnership'],
-      },
-      {
-        name: 'ITR-6 (Corporate)',
-        desc: 'Companies other than claiming exemption u/s 11',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (AY 2027-28)',
-        dueRule: 'Due on 31st Oct',
-        clientTypes: ['Company'],
-      },
-      {
-        name: 'Tax Audit 44AB',
-        desc: 'Mandatory audit report for turnover > threshold',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (AY 2027-28)',
-        dueRule: 'Due on 30th Sep',
-        clientTypes: ['Business', 'Company', 'Partnership'],
-      },
-    ],
   },
   TDS: {
     defaultFrequency: 'Quarterly',
@@ -361,22 +287,6 @@ const TAX_GROUP_CONFIG: Record<
     reconciliationTypes: [
       'TDS Deducted in Books vs Challan 281 Paid',
       'TDS in Books vs Form 26AS / TRACES',
-    ],
-    suggestions: [
-      {
-        name: 'Form 24Q (Salary)',
-        desc: 'Quarterly TDS return for Salary payments',
-        freq: 'Quarterly',
-        periodDesc: 'Quarter (Q1/Q2/Q3/Q4)',
-        dueRule: 'Due on 31st of following month',
-      },
-      {
-        name: 'Form 26Q (Non-Salary)',
-        desc: 'Quarterly TDS return for Contractors/Rent/Prof. fees',
-        freq: 'Quarterly',
-        periodDesc: 'Quarter (Q1/Q2/Q3/Q4)',
-        dueRule: 'Due on 31st of following month',
-      },
     ],
   },
   TCS: {
@@ -387,15 +297,6 @@ const TAX_GROUP_CONFIG: Record<
       'TCS Collected in Books vs Challan 281 Paid',
       'TCS in Books vs Form 26AS',
     ],
-    suggestions: [
-      {
-        name: 'Form 27EQ (TCS)',
-        desc: 'Quarterly return for tax collected at source',
-        freq: 'Quarterly',
-        periodDesc: 'Quarter (Q1/Q2/Q3/Q4)',
-        dueRule: 'Due on 15th of following month',
-      },
-    ],
   },
   ROC: {
     defaultFrequency: 'Yearly',
@@ -405,69 +306,18 @@ const TAX_GROUP_CONFIG: Record<
       'Audited Financial Statements vs Form AOC-4',
       'Secretarial Records vs Form MGT-7',
     ],
-    suggestions: [
-      {
-        name: 'AOC-4 (Financials)',
-        desc: 'Filing of audited balance sheet & P&L with MCA',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (Post AGM)',
-        dueRule: 'Due on 30th Oct (Within 30 days of AGM)',
-        clientTypes: ['Company'],
-      },
-      {
-        name: 'MGT-7 (Annual Return)',
-        desc: 'Annual return filing with ROC under Companies Act',
-        freq: 'Yearly',
-        periodDesc: 'FY 2026-27 (Post AGM)',
-        dueRule: 'Due on 29th Nov (Within 60 days of AGM)',
-        clientTypes: ['Company'],
-      },
-      {
-        name: 'DIR-3 KYC',
-        desc: 'Annual Director KYC verification with MCA portal',
-        freq: 'Yearly',
-        periodDesc: 'Annual KYC',
-        dueRule: 'Due on 30th Sep Every Year',
-        clientTypes: ['Company', 'LLP'],
-      },
-    ],
   },
   'PF / ESI': {
     defaultFrequency: 'Monthly',
     allowedFrequencies: ['Monthly'],
     defaultClientTypes: ['Business', 'Company', 'Partnership', 'LLP'],
     reconciliationTypes: ['Payroll Register vs ECR Challan Paid'],
-    suggestions: [
-      {
-        name: 'ECR (EPF Monthly)',
-        desc: 'Electronic Challan cum Return for Provident Fund',
-        freq: 'Monthly',
-        periodDesc: 'Monthly',
-        dueRule: 'Due on 15th Next Month',
-      },
-      {
-        name: 'ESI Monthly Return',
-        desc: 'Employees State Insurance monthly contribution',
-        freq: 'Monthly',
-        periodDesc: 'Monthly',
-        dueRule: 'Due on 15th Next Month',
-      },
-    ],
   },
   Other: {
     defaultFrequency: 'Monthly',
     allowedFrequencies: ['Monthly', 'Quarterly', 'Half-Yearly', 'Yearly', 'One Time', 'Custom'],
     defaultClientTypes: ['Individual', 'Business', 'Company', 'Partnership', 'LLP', 'Trust', 'Other'],
     reconciliationTypes: ['Bank Reconciliation', 'Books vs Third-Party Statement', 'Custom Reconciliation'],
-    suggestions: [
-      {
-        name: 'Professional Tax (PT)',
-        desc: 'State professional tax monthly/annual return',
-        freq: 'Monthly',
-        periodDesc: 'Monthly',
-        dueRule: 'Due on 10th Next Month',
-      },
-    ],
   },
 };
 
@@ -479,7 +329,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   defaultTaxGroup = '',
 }) => {
   // Dropdown options
-  const [employees, setEmployees] = useState<EmployeeItem[]>([]);
   const [financialYears, setFinancialYears] = useState<any[]>([]);
   const [availableTaxGroups, setAvailableTaxGroups] = useState<TaxGroupItem[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -527,8 +376,8 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [actualSubmissionDate, setActualSubmissionDate] = useState<string>('');
   const [acknowledgementNumber, setAcknowledgementNumber] = useState<string>('');
   const [submissionMethod, setSubmissionMethod] = useState<string>('Portal');
-  const [submittedBy, setSubmittedBy] = useState<string>('Tosif Raza');
-  const [filingRemarks, setFilingRemarks] = useState<string>('');
+  const submittedBy = 'Tosif Raza';
+  const filingRemarks = '';
 
   // Section D: Reconciliation Management
   const [reconciliationRequired, setReconciliationRequired] = useState<boolean>(false);
@@ -536,19 +385,19 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   const [reconciliationType, setReconciliationType] = useState<string>(
     'GSTR-2B vs Purchase Register'
   );
-  const [reconciliationStatus, setReconciliationStatus] = useState<string>('Pending');
+  const reconciliationStatus = 'Pending';
   const [amountAsPerBooks, setAmountAsPerBooks] = useState<number | string>(0);
   const [amountAsPerStatement, setAmountAsPerStatement] = useState<number | string>(0);
-  const [reconciledBy, setReconciledBy] = useState<string>('');
-  const [reconciliationRemarks, setReconciliationRemarks] = useState<string>('');
+  const reconciledBy = '';
+  const reconciliationRemarks = '';
 
   // Section E: Reminders & Compliance
-  const [reminderEnabled, setReminderEnabled] = useState<boolean>(true);
-  const [reminderDays, setReminderDays] = useState<number[]>([7, 3, 1]);
+  const reminderEnabled = true;
+  const reminderDays = [7, 3, 1];
   const [priority, setPriority] = useState<string>('Medium');
   const [assignedEmployeeId, setAssignedEmployeeId] = useState<string>('');
-  const [approvalRequired, setApprovalRequired] = useState<boolean>(false);
-  const [internalNotes, setInternalNotes] = useState<string>('');
+  const approvalRequired = false;
+  const internalNotes = '';
 
   // Helper to map dynamic/verbose tax group names to statutory config keys
   const getCanonicalGroup = (grp: string): string => {
@@ -566,14 +415,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
   // Dynamic configuration based on current Tax Group
   const currentConfig = TAX_GROUP_CONFIG[getCanonicalGroup(taxGroup)] || TAX_GROUP_CONFIG.Other;
 
-  // Auto-calculated Effective Due Date
-  const effectiveDueDate = hasExtension && extendedDueDate ? extendedDueDate : originalDueDate;
-
-  // Auto-calculated Difference Amount
-  const booksVal = parseFloat(String(amountAsPerBooks)) || 0;
-  const stmtVal = parseFloat(String(amountAsPerStatement)) || 0;
-  const differenceAmount = Math.round((booksVal - stmtVal) * 100) / 100;
-
   // Fetch dropdowns
   useEffect(() => {
     if (isOpen) {
@@ -584,7 +425,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
       ])
         .then(([eRes, fyRes, tgRes]) => {
           if (eRes.data?.data?.employees) {
-            setEmployees(eRes.data.data.employees);
             if (!assignedEmployeeId && eRes.data.data.employees.length > 0) {
               setAssignedEmployeeId(eRes.data.data.employees[0]._id);
             }
@@ -639,39 +479,6 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
         setOriginalDueDate(matchedGroup.dueDate);
       }
     }
-  };
-
-  // 1-Click Suggestion Preset Handler
-  const applyTaxSuggestion = (sug: {
-    name: string;
-    desc: string;
-    freq: string;
-    periodDesc: string;
-    dueRule: string;
-    clientTypes?: string[];
-  }) => {
-    setTaxName(sug.name);
-    setDescription(sug.desc);
-    setFrequency(sug.freq);
-    setFilingPeriodSchedule(buildFilingPeriodSchedule(sug.freq, financialYear).slice(0, 1));
-    setSavedFilingPeriodFlags([false]);
-    setHasEditedFilingSchedule(false);
-    setFilingPeriod(sug.periodDesc);
-    if (sug.clientTypes) {
-      setApplicableClientTypes(sug.clientTypes);
-    }
-    // Set typical due date
-    if (sug.name.includes('GSTR-1')) setOriginalDueDate('2026-12-11');
-    else if (sug.name.includes('GSTR-3B')) setOriginalDueDate('2026-12-20');
-    else if (sug.name.includes('ITR-1') || sug.name.includes('ITR-4'))
-      setOriginalDueDate('2027-07-31');
-    else if (sug.name.includes('ITR-6') || sug.name.includes('AOC-4'))
-      setOriginalDueDate('2027-10-31');
-    else if (sug.name.includes('24Q') || sug.name.includes('26Q')) setOriginalDueDate('2027-01-31');
-    else if (sug.name.includes('ECR') || sug.name.includes('ESI')) setOriginalDueDate('2026-12-15');
-
-    setIsDirty(true);
-    toast.success(`Configured for ${sug.name}`);
   };
 
   // Populate when editing
@@ -823,20 +630,12 @@ export const TaxRuleModal: React.FC<TaxRuleModalProps> = ({
 
   if (!isOpen) return null;
 
-  const reminderOptions = [30, 15, 7, 3, 1];
   const selectedBusinessCategory = applicableClientTypes[0] || '';
   const requiresCustomBusinessCategory =
     selectedBusinessCategory === 'Other Legal Entity' || selectedBusinessCategory === 'Other';
   const hasLegacyBusinessCategory =
     selectedBusinessCategory &&
     !BUSINESS_CATEGORY_GROUPS.some((group) => group.options.includes(selectedBusinessCategory));
-
-  const toggleReminderDay = (day: number) => {
-    setIsDirty(true);
-    setReminderDays((prev) =>
-      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day].sort((a, b) => b - a)
-    );
-  };
 
   const selectBusinessCategory = (category: string) => {
     setApplicableClientTypes(category ? [category] : []);

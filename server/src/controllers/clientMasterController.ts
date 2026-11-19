@@ -245,7 +245,7 @@ export const exportClientsCSV = async (req: Request, res: Response, next: NextFu
     const clients = await Client.find({ organizationId, status: { $ne: 'archived' } }).sort({ clientCode: 1 });
 
     const header = 'Client Code,Name,Business Name,Client Type,Business Type,PAN,GSTIN,Email,Mobile,Status\n';
-    const rows = clients.map((c) =>
+    const rows = clients.map((c: any) =>
       `"${c.clientCode}","${c.name}","${c.businessName || ''}","${c.clientType}","${c.businessType}","${c.pan}","${c.gstin || ''}","${c.email || ''}","${c.mobile}","${c.status}"`
     ).join('\n');
 

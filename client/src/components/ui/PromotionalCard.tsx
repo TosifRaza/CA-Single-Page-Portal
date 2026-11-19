@@ -1,6 +1,12 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Scale, TrendingUp, Calculator, ShieldCheck } from 'lucide-react';
+import {
+  ArrowRight,
+  Scale,
+  TrendingUp,
+  Calculator,
+  ShieldCheck,
+} from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
 export const PromotionalCard: React.FC = () => {

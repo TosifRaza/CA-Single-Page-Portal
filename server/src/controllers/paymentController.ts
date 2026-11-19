@@ -40,19 +40,23 @@ export const getPayments = async (req: Request, res: Response, next: NextFunctio
       .limit(limitNum);
 
     // Summary stats
-    const totalAmount = await Payment.aggregate([
-      { $match: { organizationId } },
-      { $group: { _id: null, total: { $sum: '$amount' }, paid: { $sum: '$paidAmount' } } },
-    ]);
+    const organizationPayments = await Payment.find({ organizationId });
+    const totalAmount = (organizationPayments as any[]).reduce(
+      (totals, payment) => ({
+        total: totals.total + (Number(payment.amount) || 0),
+        paid: totals.paid + (Number(payment.paidAmount) || 0),
+      }),
+      { total: 0, paid: 0 }
+    );
 
     res.json({
       success: true,
       data: {
         payments,
         summary: {
-          totalBilled: totalAmount[0]?.total || 0,
-          totalCollected: totalAmount[0]?.paid || 0,
-          pendingAmount: (totalAmount[0]?.total || 0) - (totalAmount[0]?.paid || 0),
+          totalBilled: totalAmount.total,
+          totalCollected: totalAmount.paid,
+          pendingAmount: totalAmount.total - totalAmount.paid,
         },
         pagination: {
           total,

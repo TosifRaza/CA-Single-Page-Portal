@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import mongoose from 'mongoose';
 import { Client } from '../models/Client.js';
 import { WorkAssignment } from '../models/WorkAssignment.js';
 import { TaxFiling } from '../models/TaxFiling.js';
@@ -7,7 +6,7 @@ import { ActivityLog } from '../models/Operations.js';
 
 export const getDashboardStats = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const organizationId = new mongoose.Types.ObjectId(req.user!.organizationId);
+    const organizationId = req.user!.organizationId;
 
     // Total Clients count
     const totalClients = await Client.countDocuments({
@@ -42,7 +41,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
       status: 'Overdue',
     });
 
-    // Tax Filing & Reconciliation Compliance Metrics (MongoDB Aggregations)
+    // Tax Filing & Reconciliation Compliance Metrics
     const [
       pendingTaxFilings,
       completedTaxFilings,
@@ -192,7 +191,7 @@ export const getDashboardStats = async (req: Request, res: Response, next: NextF
           dueDate: w.dueDate,
           status: 'Upcoming',
         })),
-        recentActivities: recentActivities.map((a) => ({
+        recentActivities: recentActivities.map((a: any) => ({
           id: a._id,
           action: a.action,
           entityType: a.entityType,

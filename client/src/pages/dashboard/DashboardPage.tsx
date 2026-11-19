@@ -15,7 +15,6 @@ export const DashboardPage: React.FC = () => {
 
   const [dateRange, setDateRange] = useState('Last 6 Months');
   const [rangeDropdownOpen, setRangeDropdownOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const [stats, setStats] = useState<any>({
     kpi: {
@@ -55,15 +54,12 @@ export const DashboardPage: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
-      setLoading(true);
       const res = await api.get(`/dashboard/stats?range=${encodeURIComponent(dateRange)}`);
       if (res.data?.data) {
         setStats(res.data.data);
       }
     } catch (err) {
       console.log('Using seeded fallback dashboard data');
-    } finally {
-      setLoading(false);
     }
   };
 

@@ -9,14 +9,7 @@ import {
   UserCheck,
   ClipboardList,
   FolderLock,
-  Calendar,
-  Building2,
-  Layers,
   FileCheck2,
-  CreditCard,
-  BarChart3,
-  Settings,
-  ShieldCheck,
   ChevronDown,
   ChevronRight,
   LogOut,
@@ -36,7 +29,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const [mastersOpen, setMastersOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
-  const [settingsOpen, setSettingsOpen] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname === path;

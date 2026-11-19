@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import path from 'path';
 import fs from 'fs';
 import { DocumentModel } from '../models/Document.js';
 import { ActivityLog } from '../models/Operations.js';

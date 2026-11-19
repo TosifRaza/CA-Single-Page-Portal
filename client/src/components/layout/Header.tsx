@@ -6,9 +6,7 @@ import {
   Sun,
   Moon,
   Menu,
-  Check,
   CheckCheck,
-  ExternalLink,
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import api from '../../services/api';
@@ -25,7 +23,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -57,20 +54,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   useEffect(() => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
       setSearchResults(null);
-      setIsSearching(false);
       return;
     }
 
     const timer = setTimeout(async () => {
-      setIsSearching(true);
       try {
         const res = await api.get(`/search?q=${encodeURIComponent(searchQuery)}`);
         setSearchResults(res.data?.data);
         setSearchOpen(true);
       } catch (err) {
         console.error('Search error:', err);
-      } finally {
-        setIsSearching(false);
       }
     }, 300);
 

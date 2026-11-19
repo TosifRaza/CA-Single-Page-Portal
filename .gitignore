@@ -7,11 +7,14 @@ server/node_modules/
 dist/
 client/dist/
 server/dist/
+server/src/generated/prisma/
 build/
 
 # Local database & logs
 db_data/
 server/db_data/
+server/mysql_data/
+server/mysql-local.pid
 uploads/
 server/uploads/
 *.wt

@@ -4,10 +4,6 @@ import {
   Search,
   Plus,
   Download,
-  Building,
-  User,
-  Phone,
-  Mail,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -22,7 +18,6 @@ import { ClientItem } from '../../types';
 
 export const ClientsPage: React.FC = () => {
   const [clients, setClients] = useState<ClientItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [clientTypeFilter, setClientTypeFilter] = useState('All');
   const [page, setPage] = useState(1);
@@ -31,11 +26,9 @@ export const ClientsPage: React.FC = () => {
 
   // Client Details Modal
   const [selectedClient, setSelectedClient] = useState<any>(null);
-  const [clientDetailsLoading, setClientDetailsLoading] = useState(false);
 
   const fetchClients = async () => {
     try {
-      setLoading(true);
       const params = new URLSearchParams();
       if (search) params.append('search', search);
       if (clientTypeFilter !== 'All') params.append('clientType', clientTypeFilter);
@@ -50,8 +43,6 @@ export const ClientsPage: React.FC = () => {
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -62,15 +53,12 @@ export const ClientsPage: React.FC = () => {
   const viewClientDetails = async (client: ClientItem) => {
     setSelectedClient(client);
     try {
-      setClientDetailsLoading(true);
       const res = await api.get(`/clients/${client._id}`);
       if (res.data?.data) {
         setSelectedClient(res.data.data);
       }
     } catch (e) {
       console.error(e);
-    } finally {
-      setClientDetailsLoading(false);
     }
   };
 

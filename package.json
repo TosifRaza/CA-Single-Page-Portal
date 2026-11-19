@@ -1,7 +1,7 @@
 {
   "name": "ca-proflow",
   "version": "1.0.0",
-  "description": "CA ProFlow - Simplifying Compliance - Production MERN Practice Management Platform",
+  "description": "CA ProFlow - Simplifying Compliance - Practice Management Platform",
   "private": true,
   "workspaces": [
     "server",
@@ -16,5 +16,9 @@
   },
   "devDependencies": {
     "concurrently": "^9.1.2"
+  },
+  "allowScripts": {
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true
   }
 }

@@ -1,6 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, NavLink } from 'react-router-dom';
-import { Building, Lock, Mail, User, ArrowRight } from 'lucide-react';
+import {
+  Building,
+  Lock,
+  Mail,
+  User,
+  ArrowRight,
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';

@@ -22,9 +22,9 @@ export const errorHandler = (
     return;
   }
 
-  // MongoDB Duplicate Key Error
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue || {})[0] || 'field';
+  // Prisma unique constraint error
+  if (err.code === 'P2002') {
+    const field = Array.isArray(err.meta?.target) ? err.meta.target[0] : err.meta?.target || 'field';
     res.status(409).json({
       success: false,
       message: `A record with this ${field} already exists.`,
@@ -33,11 +33,10 @@ export const errorHandler = (
     return;
   }
 
-  // CastError (invalid ObjectId)
-  if (err.name === 'CastError') {
+  if (err.code === 'P2025') {
     res.status(400).json({
       success: false,
-      message: `Invalid ID format: ${err.value}`,
+      message: 'The requested record was not found.',
     });
     return;
   }

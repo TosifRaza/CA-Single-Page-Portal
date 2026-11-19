@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
-import { Plus, ShieldCheck, User, Mail, Shield, Check, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { UserRole } from '../../types';
 
 export const UsersRolesPage: React.FC = () => {
   const [users, setUsers] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -20,7 +18,6 @@ export const UsersRolesPage: React.FC = () => {
 
   const loadUsers = async () => {
     try {
-      setLoading(true);
       const res = await api.get('/settings/users');
       if (res.data?.data) {
         setUsers(res.data.data);
@@ -31,8 +28,6 @@ export const UsersRolesPage: React.FC = () => {
         { _id: '2', name: 'Anita Desai', email: 'anita@rizassociates.com', role: 'Manager', status: 'active', lastLogin: new Date() },
         { _id: '3', name: 'Vikram Roy', email: 'vikram@rizassociates.com', role: 'Employee', status: 'active' },
       ]);
-    } finally {
-      setLoading(false);
     }
   };
 

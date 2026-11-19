@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { X, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
 import { TaxFilingItem } from '../../types';

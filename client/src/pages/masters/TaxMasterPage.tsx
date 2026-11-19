@@ -7,14 +7,11 @@ import {
   ChevronRight,
   Edit2,
   Trash2,
-  ChevronDown,
   X,
   Clock,
   RefreshCw,
-  CheckCircle2,
   AlertTriangle,
   Calendar,
-  Building,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '../../services/api';
@@ -299,7 +296,6 @@ export const TaxMasterPage: React.FC = () => {
               periodTo: selectedTaxSchedule.periodTo || '',
               filingDate: selectedTaxSchedule.originalDueDate || '',
               extendedDate: selectedTaxSchedule.extendedDueDate,
-              extensionReason: selectedTaxSchedule.extensionReason,
             },
           ]
         : []
@@ -527,19 +523,10 @@ export const TaxMasterPage: React.FC = () => {
                             <span className="text-[11px] opacity-75">({scheduleCount})</span>
                           </button>
                           {remainingScheduleCount > 0 && (
-                            <div className="flex flex-wrap items-center gap-x-2 text-[11px] leading-tight">
-                              <span className="text-amber-700 dark:text-amber-300">
-                                <AlertTriangle className="mr-1 inline h-3 w-3" />
-                                {configuredScheduleCount}/{expectedScheduleCount} set · {remainingScheduleCount} due
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => openEditModal(tax)}
-                                className="text-brand-600 hover:underline dark:text-brand-300"
-                              >
-                                Complete schedule
-                              </button>
-                            </div>
+                            <span className="text-[11px] leading-tight text-amber-700 dark:text-amber-300">
+                              <AlertTriangle className="mr-1 inline h-3 w-3" />
+                              {configuredScheduleCount}/{expectedScheduleCount} set · {remainingScheduleCount} due
+                            </span>
                           )}
                         </div>
                       </td>
